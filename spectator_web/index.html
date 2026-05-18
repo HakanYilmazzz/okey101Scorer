@@ -684,13 +684,25 @@
     <!-- Profile Picker Modal -->
     <div id="profileModal" class="profile-overlay" style="display: none;">
         <div class="profile-card">
-            <div class="profile-title">YANCİ PROFİLİ</div>
+            <div class="profile-title">PROFİL OLUŞTUR</div>
             <div class="profile-subtitle">Masadakilerin kimin emoji attığını ve laf soktuğunu görmesi için bir isim gir ve karakterini seç:</div>
             
             <input type="text" id="nicknameInput" placeholder="İsmin (Örn: Hakan)" maxlength="10">
             <div class="avatar-header">Karakterini Seç:</div>
             <div class="avatar-grid">
-                <div class="avatar-item active" onclick="selectAvatar(this, '☕')">
+                <div class="avatar-item active" onclick="selectAvatar(this, '👑')">
+                    <span class="avatar-emoji">👑</span>
+                    <span class="avatar-label">Üstad</span>
+                </div>
+                <div class="avatar-item" onclick="selectAvatar(this, '🪨')">
+                    <span class="avatar-emoji">🪨</span>
+                    <span class="avatar-label">Taş Çalan</span>
+                </div>
+                <div class="avatar-item" onclick="selectAvatar(this, '🎲')">
+                    <span class="avatar-emoji">🎲</span>
+                    <span class="avatar-label">Şanslı</span>
+                </div>
+                <div class="avatar-item" onclick="selectAvatar(this, '☕')">
                     <span class="avatar-emoji">☕</span>
                     <span class="avatar-label">Çaycı</span>
                 </div>
@@ -698,21 +710,9 @@
                     <span class="avatar-emoji">🧐</span>
                     <span class="avatar-label">Taktikçi</span>
                 </div>
-                <div class="avatar-item" onclick="selectAvatar(this, '👼')">
-                    <span class="avatar-emoji">👼</span>
-                    <span class="avatar-label">Şans Meleği</span>
-                </div>
                 <div class="avatar-item" onclick="selectAvatar(this, '⚖️')">
                     <span class="avatar-emoji">⚖️</span>
                     <span class="avatar-label">Hakem</span>
-                </div>
-                <div class="avatar-item" onclick="selectAvatar(this, '🏎️')">
-                    <span class="avatar-emoji">🏎️</span>
-                    <span class="avatar-label">Hızlı</span>
-                </div>
-                <div class="avatar-item" onclick="selectAvatar(this, '🤫')">
-                    <span class="avatar-emoji">🤫</span>
-                    <span class="avatar-label">Casus</span>
                 </div>
             </div>
             
@@ -738,7 +738,7 @@
         const banterPanel = document.getElementById('banterPanel');
 
         let yanciName = "";
-        let yanciAvatar = "☕";
+        let yanciAvatar = "👑";
 
         // Check and prompt profile selection at startup
         document.addEventListener("DOMContentLoaded", () => {
