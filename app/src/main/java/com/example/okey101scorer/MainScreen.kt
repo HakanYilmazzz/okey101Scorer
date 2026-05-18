@@ -310,6 +310,34 @@ fun MainScreen(viewModel: ScoreViewModel) {
             }
         }
     }
+    val auraColors = remember(columnSums) {
+        val sum1 = columnSums.getOrNull(0) ?: 0
+        val sum2 = columnSums.getOrNull(1) ?: 0
+        val diff = kotlin.math.abs(sum1 - sum2)
+        
+        val maxGap = 800f
+        val intensity = (diff / maxGap).coerceIn(0f, 1f)
+
+        val isBizWinning = sum1 < sum2
+        val isOnlarWinning = sum2 < sum1
+
+        val winningColor = Color(0xFF10B981) // Emerald Green
+        val losingColor = Color(0xFFEF4444) // Red
+        val neutralColor = Color(0xFF1E293B) // Slate 800
+
+        val leftColor = when {
+            isBizWinning -> winningColor.copy(alpha = 0.15f + 0.35f * intensity)
+            isOnlarWinning -> losingColor.copy(alpha = 0.05f + 0.15f * intensity)
+            else -> neutralColor.copy(alpha = 0.2f)
+        }
+        
+        val rightColor = when {
+            isOnlarWinning -> winningColor.copy(alpha = 0.15f + 0.35f * intensity)
+            isBizWinning -> losingColor.copy(alpha = 0.05f + 0.15f * intensity)
+            else -> neutralColor.copy(alpha = 0.2f)
+        }
+        Pair(leftColor, rightColor)
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -402,39 +430,13 @@ fun MainScreen(viewModel: ScoreViewModel) {
                 .padding(paddingValues)
                 .background(MaterialTheme.colorScheme.surface)
                 .drawBehind {
-                    val sum1 = columnSums.getOrNull(0) ?: 0
-                    val sum2 = columnSums.getOrNull(1) ?: 0
-                    val diff = Math.abs(sum1 - sum2)
-                    
-                    val maxGap = 800f
-                    val intensity = (diff / maxGap).coerceIn(0f, 1f)
-
-                    val isBizWinning = sum1 < sum2
-                    val isOnlarWinning = sum2 < sum1
-
-                    val winningColor = Color(0xFF10B981) // Emerald Green
-                    val losingColor = Color(0xFFEF4444) // Red
-                    val neutralColor = Color(0xFF1E293B) // Slate 800
-
-                    val leftAuraColor = when {
-                        isBizWinning -> winningColor.copy(alpha = 0.15f + 0.35f * intensity)
-                        isOnlarWinning -> losingColor.copy(alpha = 0.05f + 0.15f * intensity)
-                        else -> neutralColor.copy(alpha = 0.2f)
-                    }
-                    
-                    val rightAuraColor = when {
-                        isOnlarWinning -> winningColor.copy(alpha = 0.15f + 0.35f * intensity)
-                        isBizWinning -> losingColor.copy(alpha = 0.05f + 0.15f * intensity)
-                        else -> neutralColor.copy(alpha = 0.2f)
-                    }
-
                     val w = size.width
                     val h = size.height
                     
                     // Left Aura
                     drawRect(
                         brush = Brush.radialGradient(
-                            colors = listOf(leftAuraColor, Color.Transparent),
+                            colors = listOf(auraColors.first, Color.Transparent),
                             center = Offset(0f, h / 3f),
                             radius = w * 0.8f
                         )
@@ -443,7 +445,7 @@ fun MainScreen(viewModel: ScoreViewModel) {
                     // Right Aura
                     drawRect(
                         brush = Brush.radialGradient(
-                            colors = listOf(rightAuraColor, Color.Transparent),
+                            colors = listOf(auraColors.second, Color.Transparent),
                             center = Offset(w, h / 3f),
                             radius = w * 0.8f
                         )
