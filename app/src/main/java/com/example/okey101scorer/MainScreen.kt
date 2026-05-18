@@ -421,7 +421,8 @@ fun MainScreen(viewModel: ScoreViewModel) {
             }
         },
         bottomBar = {
-            SumRow(sums = columnSums, roundCount = rounds.size)
+            val playedHandsCount = rounds.count { it.score1 != 0 || it.score2 != 0 }
+            SumRow(sums = columnSums, roundCount = playedHandsCount)
         }
     ) { paddingValues ->
         Column(
