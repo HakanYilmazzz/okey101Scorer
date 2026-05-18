@@ -19,7 +19,7 @@ Bu uygulama, sadece basit bir skor tablosu olmanın ötesinde, masadaki yancıla
 ### 📡 3. Seyirci Modu & "Akan Sohbet" (Interactive Spectator & Live Banter Chat)
 * **Kendi Ekranından İzleme**: Masadaki seyirciler (yancılar), oyunu izlemek için telefonunuza eğilmek zorunda kalmaz.
 * **QR Kod veya Manuel Giriş**: Anten butonuna basarak **Seyirci Odası** açabilir, yancılara QR kod okutabilir veya **6 haneli oda kodunu** doğrudan web sitesine yazdırarak bağlanabilirsiniz.
-* **Milisaniyelik Canlı Yayın (SSE)**: `ntfy.sh` altyapısı ve Server-Sent Events sayesinde yancıların tarayıcısında açılan şık web sayfası (`https://hakanyilmazzz.github.io/okey101Scorer/`), masadaki skorları **anlık (real-time)** olarak yansıtır.
+* **Milisaniyelik Canlı Yayın (Firebase)**: `Firebase Realtime Database` altyapısı sayesinde yancıların tarayıcısında açılan şık web sayfası (`https://hakanyilmazzz.github.io/okey101Scorer/`), masadaki skorları **anlık (real-time)** olarak yansıtır. Tamamen limitsiz ve anında senkronize olur.
 * **👤 Yancı Profilleri (Spectator Avatars)**: Web yayınına bağlanan seyircileri şık bir glassmorphism arayüzlü profil seçim ekranı karşılar. Seyirciler kendi isimlerini (maks 10 karakter) girdikten sonra kendilerine uygun eğlenceli rollerden birini seçerek masaya katılır:
   * ☕ *Çaycı Yancı*
   * 🧐 *Taktikçi Yancı*
@@ -65,8 +65,12 @@ Bu uygulama, sadece basit bir skor tablosu olmanın ötesinde, masadaki yancıla
 ### Seyirci Web Uygulaması
 * **Arayüz**: Vanilla HTML5, CSS3 (Glassmorphism & Neon FX)
 * **Yazı Tipi**: Google Fonts (Outfit & JetBrains Mono)
-* **Haberleşme**: EventSource (Server-Sent Events) ile `ntfy.sh` entegrasyonu
+* **Haberleşme**: Firebase JS SDK (Realtime Database Listener)
 * **Hosting**: GitHub Pages (100% Ücretsiz ve Pratik)
+
+### Sunucu & Veritabanı
+* **Altyapı**: Firebase Realtime Database (Google Cloud)
+* **Senkronizasyon**: WebSockets tabanlı canlı dinleme ve yazma
 
 ---
 
@@ -78,8 +82,9 @@ Bu uygulama, sadece basit bir skor tablosu olmanın ötesinde, masadaki yancıla
    git clone https://github.com/HakanYilmazzz/okey101Scorer.git
    ```
 2. **Android Studio**'yu açın ve projeyi içe aktarın (Import).
-3. Gradle senkronizasyonunun tamamlanmasını bekleyin.
-4. Cihazınızı bağlayın veya emülatör seçip **Run** butonuna basın.
+3. Firebase Console üzerinden ücretsiz bir proje oluşturup `google-services.json` dosyasını `app/` klasörüne yapıştırın.
+4. Gradle senkronizasyonunun tamamlanmasını bekleyin.
+5. Cihazınızı bağlayın veya emülatör seçip **Run** butonuna basın.
 
 ### Seyirci Ekranını GitHub Pages Üzerinden Yayınlamak (10 Saniyede Hazır!)
 Web arayüzümüz tamamen tek bir `index.html` dosyasına sığdırılmış ve ana dizine yerleştirilmiştir. Bu sayede hiçbir Vercel veya sunucu ayarı yapmadan doğrudan GitHub üzerinden ücretsiz yayınlayabilirsiniz:
