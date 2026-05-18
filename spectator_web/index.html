@@ -40,6 +40,29 @@
             padding: 16px 16px 80px 16px; /* Bottom padding so reaction bar doesn't overlap contents */
         }
 
+        /* Dynamic Aura Background */
+        .aura-blob {
+            position: fixed;
+            top: 10vh;
+            width: 70vw;
+            height: 70vw;
+            border-radius: 50%;
+            filter: blur(100px);
+            z-index: -1;
+            opacity: 0.5;
+            transition: background-color 1.5s ease;
+            animation: floatAura 6s infinite alternate ease-in-out;
+            pointer-events: none;
+        }
+        
+        #auraLeft { left: -20vw; }
+        #auraRight { right: -20vw; }
+
+        @keyframes floatAura {
+            0% { transform: scale(1) translateY(0); opacity: 0.4; }
+            100% { transform: scale(1.1) translateY(30px); opacity: 0.7; }
+        }
+
         /* Top Header styling */
         header {
             width: 100%;
@@ -662,6 +685,9 @@
             <span id="statusText">ÇEVRİMDİŞİ</span>
         </div>
     </header>
+    <!-- Dynamic Aura Background -->
+    <div id="auraLeft" class="aura-blob" style="background-color: rgba(30, 41, 59, 0.2);"></div>
+    <div id="auraRight" class="aura-blob" style="background-color: rgba(30, 41, 59, 0.2);"></div>
 
     <main id="appContainer">
         <!-- Renders dynamically -->
@@ -936,9 +962,30 @@
 
             const team1 = data.teamNames[0] || "BİZ";
             const team2 = data.teamNames[1] || "ONLAR";
-            const sum1 = data.sums[0] || 0;
-            const sum2 = data.sums[1] || 0;
+            const sum1 = data.sums[0];
+            const sum2 = data.sums[1];
+
+            // Update Dynamic Aura
             const diff = Math.abs(sum1 - sum2);
+            const intensity = Math.min(diff / 800, 1);
+            
+            const winningColor = `rgba(16, 185, 129, ${0.15 + 0.35 * intensity})`;
+            const losingColor = `rgba(239, 68, 68, ${0.05 + 0.15 * intensity})`;
+            const neutralColor = `rgba(30, 41, 59, 0.2)`;
+
+            const auraLeft = document.getElementById('auraLeft');
+            const auraRight = document.getElementById('auraRight');
+
+            if (sum1 < sum2) { // BİZ wins
+                auraLeft.style.backgroundColor = winningColor;
+                auraRight.style.backgroundColor = losingColor;
+            } else if (sum2 < sum1) { // ONLAR wins
+                auraLeft.style.backgroundColor = losingColor;
+                auraRight.style.backgroundColor = winningColor;
+            } else { // Draw
+                auraLeft.style.backgroundColor = neutralColor;
+                auraRight.style.backgroundColor = neutralColor;
+            }
 
             // Dynamic color selection based on who is leading
             let dynamicStyle = "";

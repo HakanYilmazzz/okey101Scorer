@@ -47,6 +47,9 @@ import androidx.compose.ui.platform.LocalContext
 import kotlin.math.sin
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -403,6 +406,54 @@ fun MainScreen(viewModel: ScoreViewModel) {
                 .fillMaxSize()
                 .padding(paddingValues)
                 .background(MaterialTheme.colorScheme.surface)
+                .drawBehind {
+                    val sum1 = columnSums.getOrNull(0) ?: 0
+                    val sum2 = columnSums.getOrNull(1) ?: 0
+                    val diff = Math.abs(sum1 - sum2)
+                    
+                    val maxGap = 800f
+                    val intensity = (diff / maxGap).coerceIn(0f, 1f)
+
+                    val isBizWinning = sum1 < sum2
+                    val isOnlarWinning = sum2 < sum1
+
+                    val winningColor = Color(0xFF10B981) // Emerald Green
+                    val losingColor = Color(0xFFEF4444) // Red
+                    val neutralColor = Color(0xFF1E293B) // Slate 800
+
+                    val leftAuraColor = when {
+                        isBizWinning -> winningColor.copy(alpha = 0.15f + 0.35f * intensity)
+                        isOnlarWinning -> losingColor.copy(alpha = 0.05f + 0.15f * intensity)
+                        else -> neutralColor.copy(alpha = 0.2f)
+                    }
+                    
+                    val rightAuraColor = when {
+                        isOnlarWinning -> winningColor.copy(alpha = 0.15f + 0.35f * intensity)
+                        isBizWinning -> losingColor.copy(alpha = 0.05f + 0.15f * intensity)
+                        else -> neutralColor.copy(alpha = 0.2f)
+                    }
+
+                    val w = size.width
+                    val h = size.height
+                    
+                    // Left Aura
+                    drawRect(
+                        brush = Brush.radialGradient(
+                            colors = listOf(leftAuraColor, Color.Transparent),
+                            center = Offset(0f, h / 3f),
+                            radius = w * 0.8f
+                        )
+                    )
+                    
+                    // Right Aura
+                    drawRect(
+                        brush = Brush.radialGradient(
+                            colors = listOf(rightAuraColor, Color.Transparent),
+                            center = Offset(w, h / 3f),
+                            radius = w * 0.8f
+                        )
+                    )
+                }
                 .drawWithContent {
                     graphicsLayer.record { this@drawWithContent.drawContent() }
                     drawLayer(graphicsLayer)
@@ -417,8 +468,8 @@ fun MainScreen(viewModel: ScoreViewModel) {
             val fraction1 = ((sum1 - sum2).coerceAtLeast(0) / maxGap).coerceIn(0f, 1f)
             val fraction2 = ((sum2 - sum1).coerceAtLeast(0) / maxGap).coerceIn(0f, 1f)
 
-            val calmGreen = Color(0x1A4ADE80) // 10% Green
-            val alarmRed = Color(0x33F87171)  // 20% Red
+            val calmGreen = Color.Transparent
+            val alarmRed = Color(0x1AF87171)  // 10% Red
 
             val bgTint1 by animateColorAsState(
                 targetValue = lerp(calmGreen, alarmRed, fraction1),
