@@ -99,6 +99,7 @@
             display: flex;
             flex-direction: column;
             gap: 16px;
+            padding-bottom: 140px; /* Spacer to prevent fixed banter-panel from overlapping the totals card */
         }
 
         /* Team Headers Card */
@@ -870,14 +871,19 @@
 
             eventSource.onmessage = (e) => {
                 try {
+                    // Micro-optimization: skip JSON parse for high-frequency spectator reactions and chats
+                    if (e.data && (e.data.includes('"type":"reaction"') || e.data.includes('"type":"chat"'))) {
+                        return;
+                    }
+
                     const eventData = JSON.parse(e.data);
                     if (eventData.event === "message" && eventData.message) {
-                        const data = JSON.parse(eventData.message);
-                        
-                        // If it is a reaction or chat message, ignore it so it doesn't corrupt our scoreboard rendering!
-                        if (data.type === "reaction" || data.type === "chat") {
+                        // Double check in case of varying envelope formats
+                        if (eventData.message.includes('"type":"reaction"') || eventData.message.includes('"type":"chat"')) {
                             return;
                         }
+
+                        const data = JSON.parse(eventData.message);
 
                         // Check if the host terminated the session
                         if (data.status === "terminated") {
@@ -916,6 +922,11 @@
         function updateScoreBoard(data) {
             // Renders banter bar once a scoreboard is active
             banterPanel.style.display = "flex";
+
+            // Optimization: Prevent expensive DOM re-renders if scoreboard state hasn't changed
+            if (lastData && JSON.stringify(lastData) === JSON.stringify(data)) {
+                return;
+            }
 
             // Check if rounds are empty or payload corrupt
             if (!data.rounds || data.rounds.length === 0) {
