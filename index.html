@@ -399,6 +399,70 @@
                 font-size: 18px;
             }
         }
+
+        /* Calm down champ popup */
+        .champ-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeInOverlay 0.3s ease forwards;
+        }
+
+        .champ-card {
+            background: var(--card-bg);
+            border: 2px solid var(--accent-green);
+            border-radius: 24px;
+            padding: 32px 24px;
+            max-width: 320px;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(74, 222, 128, 0.25);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            animation: scaleInCard 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .champ-emoji {
+            font-size: 64px;
+            animation: shakeEmoji 0.6s infinite alternate;
+        }
+
+        .champ-title {
+            font-size: 20px;
+            font-weight: 900;
+            color: var(--accent-green);
+            letter-spacing: 2px;
+        }
+
+        .champ-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 20px;
+        }
+
+        @keyframes fadeInOverlay {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes scaleInCard {
+            from { transform: scale(0.85); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes shakeEmoji {
+            from { transform: rotate(-8deg); }
+            to { transform: rotate(8deg); }
+        }
     </style>
 </head>
 <body>
@@ -502,6 +566,11 @@
                     if (eventData.event === "message" && eventData.message) {
                         const data = JSON.parse(eventData.message);
                         
+                        // If it is a reaction message, ignore it so it doesn't corrupt our scoreboard rendering!
+                        if (data.type === "reaction") {
+                            return;
+                        }
+
                         // Check if the host terminated the session
                         if (data.status === "terminated") {
                             renderBroadcastTerminated();
@@ -648,9 +717,24 @@
             return "";
         }
 
-        // Send reaction to ntfy.sh topic
+        let clickTimestamps = [];
+
+        // Send reaction to ntfy.sh topic with rate-limiting
         function sendReaction(emoji) {
             if (!roomId) return;
+
+            const now = Date.now();
+            // Filter click timestamps to keep only those within the last 5 seconds
+            clickTimestamps = clickTimestamps.filter(t => now - t < 5000);
+            
+            // If they clicked 12 times or more in 5 seconds, trigger rate-limiter block popup!
+            if (clickTimestamps.length >= 12) {
+                showChampPopup();
+                return;
+            }
+
+            clickTimestamps.push(now);
+
             fetch(`https://ntfy.sh/okey101_room_${roomId}`, {
                 method: 'POST',
                 headers: {
@@ -661,6 +745,33 @@
                     emoji: emoji
                 })
             }).catch(err => console.error("Error sending reaction:", err));
+        }
+
+        // Show a beautiful glassmorphic rate limiter popup
+        function showChampPopup() {
+            let popup = document.getElementById('champPopup');
+            if (popup) return; // Don't duplicate the popup if already visible
+
+            popup = document.createElement('div');
+            popup.id = 'champPopup';
+            popup.className = 'champ-overlay';
+            popup.innerHTML = `
+                <div class="champ-card">
+                    <div class="champ-emoji">🏎️💨</div>
+                    <div class="champ-title">SAKİN OL ŞAMPİYON!</div>
+                    <div class="champ-subtitle">Emojileri bu kadar hızlı göndermene gerek yok, masadakiler çıldırdı! 😂</div>
+                </div>
+            `;
+            document.body.appendChild(popup);
+
+            // Auto fade out and remove after 2.5 seconds
+            setTimeout(() => {
+                popup.style.opacity = '0';
+                popup.style.transition = 'opacity 0.4s ease';
+                setTimeout(() => {
+                    popup.remove();
+                }, 400);
+            }, 2500);
         }
     </script>
 </body>
