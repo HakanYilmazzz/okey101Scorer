@@ -2,6 +2,7 @@ package com.example.okey101scorer
 
 import android.app.Application
 import android.content.Context
+import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -40,10 +41,10 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
     private val _teamNames = MutableStateFlow(listOf("BİZ", "ONLAR"))
     val teamNames: StateFlow<List<String>> = _teamNames.asStateFlow()
 
-    private val _rounds = MutableStateFlow<List<Round>>(listOf(Round()))
+    private val _rounds = MutableStateFlow(listOf(Round()))
     val rounds: StateFlow<List<Round>> = _rounds.asStateFlow()
 
-    private val _columnSums = MutableStateFlow<List<Int>>(listOf(0, 0))
+    private val _columnSums = MutableStateFlow(listOf(0, 0))
     val columnSums: StateFlow<List<Int>> = _columnSums.asStateFlow()
 
     // Spectator Mode State
@@ -86,7 +87,7 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
                     isScore2Entered = parts[4].toBooleanStrictOrNull() ?: false
                 )
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             listOf(Round())
         }
     }
@@ -94,10 +95,10 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
     private fun saveData() {
         val serializedRounds = serializeRounds(_rounds.value)
         val serializedTeamNames = _teamNames.value.joinToString(",")
-        sharedPrefs.edit()
-            .putString("rounds", serializedRounds)
-            .putString("teamNames", serializedTeamNames)
-            .apply()
+        sharedPrefs.edit {
+            putString("rounds", serializedRounds)
+            putString("teamNames", serializedTeamNames)
+        }
 
         // Trigger immediate live broadcast if active
         if (_isSpectatorActive.value) {
@@ -155,8 +156,9 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
                 val reader = BufferedReader(InputStreamReader(connection.inputStream, "UTF-8"))
                 var line: String? = null
                 while (isActive && reader.readLine().also { line = it } != null) {
-                    if (line!!.startsWith("data:")) {
-                        val dataStr = line!!.substring(5).trim()
+                    val currentLine = line ?: continue
+                    if (currentLine.startsWith("data:")) {
+                        val dataStr = currentLine.substring(5).trim()
                         val json = JSONObject(dataStr)
                         if (json.has("message")) {
                             val messageBody = json.getString("message")
@@ -166,7 +168,7 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
                                     val emoji = msgJson.getString("emoji")
                                     _incomingReactions.emit(emoji)
                                 }
-                            } catch (e: Exception) {
+                            } catch (_: Exception) {
                                 // Not a reaction JSON payload, ignore safely
                             }
                         }
@@ -207,7 +209,7 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
                     writer.flush()
                     writer.close()
 
-                    val responseCode = connection.responseCode
+                    connection.responseCode
                     connection.disconnect()
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -250,7 +252,7 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
                 writer.flush()
                 writer.close()
 
-                val responseCode = connection.responseCode
+                connection.responseCode
                 connection.disconnect()
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -343,7 +345,7 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
         val names = _teamNames.value
         val sum1 = sums.getOrNull(0) ?: 0
         val sum2 = sums.getOrNull(1) ?: 0
-        val diff = Math.abs(sum1 - sum2)
+        val diff = kotlin.math.abs(sum1 - sum2)
 
         return when {
             sum1 < sum2 -> "${names[0]} ÖNDE! 😎\nFARK: $diff"
