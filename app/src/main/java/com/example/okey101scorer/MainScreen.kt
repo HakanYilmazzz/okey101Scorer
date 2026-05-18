@@ -97,7 +97,7 @@ fun MainScreen(viewModel: ScoreViewModel) {
                         senderName = reaction.senderName,
                         senderAvatar = reaction.senderAvatar,
                         startX = 0.1f + (Math.random().toFloat() * 0.8f),
-                        duration = 1800 + (Math.random() * 700).toInt()
+                        duration = 4000 + (Math.random() * 2000).toInt() // Slower float animation
                     )
                     activeParticles.add(newParticle)
                 }

@@ -611,6 +611,45 @@
             }
         }
 
+        /* Chat Stream on Web */
+        .chat-stream {
+            position: fixed;
+            bottom: 120px;
+            left: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 99;
+            pointer-events: none;
+        }
+
+        .chat-bubble {
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: slideInChat 0.3s ease-out forwards;
+            max-width: 80vw;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .chat-bubble .avatar { font-size: 16px; }
+        .chat-bubble .name { font-weight: bold; color: var(--accent-green); }
+
+        @keyframes slideInChat {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeOutChat {
+            to { opacity: 0; transform: translateY(-10px); }
+        }
+
         /* Calm down champ popup */
         .champ-overlay {
             position: fixed;
@@ -692,6 +731,9 @@
     <main id="appContainer">
         <!-- Renders dynamically -->
     </main>
+
+    <!-- Chat Stream (Shows messages sent by everyone) -->
+    <div id="chatStream" class="chat-stream"></div>
 
     <!-- Floating Banter Panel (Chat & Reactions) -->
     <div class="banter-panel" id="banterPanel" style="display: none;">
@@ -893,6 +935,15 @@
             connectionStatus.className = "live-badge offline";
 
             const stateRef = db.ref(`rooms/${room}/state`);
+            const messagesRef = db.ref(`rooms/${room}/messages`);
+
+            // Listen for NEW messages
+            messagesRef.limitToLast(1).on('child_added', (snapshot) => {
+                const msg = snapshot.val();
+                if (msg && msg.type === 'chat') {
+                    displayChatBubble(msg);
+                }
+            });
 
             stateRef.on('value', (snapshot) => {
                 const data = snapshot.val();
@@ -1074,6 +1125,43 @@
             if (value === -101) return "round-cell penalty-light";
             if (value === -202) return "round-cell penalty-dark";
             return "";
+        }
+
+        function displayChatBubble(msg) {
+            const stream = document.getElementById('chatStream');
+            if (!stream) return;
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble';
+            bubble.innerHTML = `
+                <span class="avatar">${msg.avatar}</span>
+                <span class="name">${msg.name}:</span>
+                <span class="text">${msg.message}</span>
+            `;
+            stream.appendChild(bubble);
+
+            if (stream.children.length > 5) {
+                stream.removeChild(stream.firstChild);
+            }
+
+            setTimeout(() => {
+                bubble.style.animation = 'fadeOutChat 0.5s ease forwards';
+                setTimeout(() => {
+                    if (bubble.parentNode) bubble.parentNode.removeChild(bubble);
+                }, 500);
+            }, 6000); // 6 seconds visible
+        }
+
+        function renderBroadcastTerminated() {
+            appContainer.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">🛑</div>
+                    <h2>Yayın Sona Erdi</h2>
+                    <p>Oda sahibi yayını sonlandırdı.</p>
+                </div>
+            `;
+            statusText.innerText = "YAYIN BİTTİ";
+            connectionStatus.className = "live-badge offline";
+            banterPanel.style.display = 'none';
         }
 
         let clickTimestamps = [];
