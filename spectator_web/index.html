@@ -274,6 +274,51 @@
             font-size: 13px;
         }
 
+        /* Room Login Styling */
+        .input-container {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            max-width: 320px;
+            margin-top: 10px;
+        }
+
+        .input-container input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 18px;
+            color: var(--text-primary);
+            text-align: center;
+            font-weight: 800;
+            letter-spacing: 2px;
+        }
+
+        .input-container input:focus {
+            outline: none;
+            border-color: var(--accent-green);
+            box-shadow: 0 0 15px rgba(74, 222, 128, 0.15);
+        }
+
+        .input-container button {
+            background-color: var(--accent-green);
+            color: #0F172A;
+            border: none;
+            border-radius: 12px;
+            padding: 0 24px;
+            font-size: 14px;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .input-container button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(74, 222, 128, 0.3);
+        }
+
         /* Animations */
         @keyframes pulse {
             from { opacity: 0.6; }
@@ -315,12 +360,7 @@
     </header>
 
     <main id="appContainer">
-        <!-- Default State: Room not found / Wait screen -->
-        <div class="empty-state">
-            <div class="empty-icon">📡</div>
-            <div class="empty-text">ODA KODU BEKLENİYOR</div>
-            <div class="empty-subtext">Oyunu canlı izleyebilmek için lütfen QR kodu taratın ya da oda kodunu içeren geçerli bir bağlantı açın.</div>
-        </div>
+        <!-- Renders dynamically -->
     </main>
 
     <script>
@@ -335,22 +375,49 @@
         let lastData = null;
 
         if (!roomId) {
-            renderNoRoomFound();
+            renderRoomInputForm();
         } else {
             initSSEConnection(roomId);
         }
 
-        function renderNoRoomFound() {
+        function renderRoomInputForm() {
+            connectionStatus.style.display = "none";
             appContainer.innerHTML = `
                 <div class="empty-state">
-                    <div class="empty-icon">❌</div>
-                    <div class="empty-text">GEÇERSİZ ODA</div>
-                    <div class="empty-subtext">Lütfen maç sahibinin telefonundaki seyirci QR kodunu kameranızla tekrar taratın.</div>
+                    <div class="empty-icon">📡</div>
+                    <div class="empty-text">CANLI YAYINA BAĞLAN</div>
+                    <div class="empty-subtext" style="margin-bottom: 20px;">6 haneli oda kodunu girerek okey masasını canlı izleyebilirsiniz:</div>
+                    
+                    <div class="input-container">
+                        <input type="tel" id="roomInput" placeholder="Örn: 481920" maxlength="6" pattern="[0-9]*" inputmode="numeric">
+                        <button id="joinBtn">BAĞLAN</button>
+                    </div>
+                    <div id="inputError" style="color: var(--accent-red); font-size: 13px; margin-top: 10px; font-weight: bold; display: none;">Lütfen 6 haneli geçerli bir kod girin.</div>
                 </div>
             `;
+
+            const roomInput = document.getElementById('roomInput');
+            const joinBtn = document.getElementById('joinBtn');
+            const inputError = document.getElementById('inputError');
+
+            joinBtn.addEventListener('click', () => {
+                const code = roomInput.value.trim();
+                if (code.length === 6 && /^[0-9]+$/.test(code)) {
+                    window.location.search = `?room=${code}`;
+                } else {
+                    inputError.style.display = 'block';
+                }
+            });
+
+            roomInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    joinBtn.click();
+                }
+            });
         }
 
         function initSSEConnection(room) {
+            connectionStatus.style.display = "flex";
             statusText.innerText = "BAĞLANIYOR...";
             connectionStatus.className = "live-badge offline";
 
