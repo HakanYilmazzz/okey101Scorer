@@ -721,7 +721,17 @@
         </div>
     </div>
 
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
+
     <script>
+        // Initialize Firebase
+        const firebaseConfig = {
+            databaseURL: "https://okey101scorer-default-rtdb.firebaseio.com"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
         const appContainer = document.getElementById('appContainer');
         const connectionStatus = document.getElementById('connectionStatus');
         const statusText = document.getElementById('statusText');
@@ -856,48 +866,31 @@
             statusText.innerText = "BAĞLANIYOR...";
             connectionStatus.className = "live-badge offline";
 
-            // Connect to ntfy.sh server-sent events for our dedicated topic and fetch cached messages from up to 12 hours ago
-            const eventSource = new EventSource(`https://ntfy.sh/okey101_room_${room}/sse?since=12h`);
+            const stateRef = db.ref(`rooms/${room}/state`);
 
-            eventSource.onopen = () => {
-                statusText.innerText = `CANLI (${room})`;
-                connectionStatus.className = "live-badge online";
-            };
+            stateRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                
+                if (data) {
+                    statusText.innerText = `CANLI (${room})`;
+                    connectionStatus.className = "live-badge online";
 
-            eventSource.onerror = () => {
-                statusText.innerText = "BAĞLANTI KESİLDİ";
-                connectionStatus.className = "live-badge offline";
-            };
-
-            eventSource.onmessage = (e) => {
-                try {
-                    // Micro-optimization: skip JSON parse for high-frequency spectator reactions and chats
-                    if (e.data && (e.data.includes('"type":"reaction"') || e.data.includes('"type":"chat"'))) {
+                    if (data.status === "terminated") {
+                        renderBroadcastTerminated();
+                        stateRef.off();
                         return;
                     }
 
-                    const eventData = JSON.parse(e.data);
-                    if (eventData.event === "message" && eventData.message) {
-                        // Double check in case of varying envelope formats
-                        if (eventData.message.includes('"type":"reaction"') || eventData.message.includes('"type":"chat"')) {
-                            return;
-                        }
-
-                        const data = JSON.parse(eventData.message);
-
-                        // Check if the host terminated the session
-                        if (data.status === "terminated") {
-                            renderBroadcastTerminated();
-                            eventSource.close();
-                            return;
-                        }
-
-                        updateScoreBoard(data);
-                    }
-                } catch (err) {
-                    console.error("Payload parse error:", err);
+                    updateScoreBoard(data);
+                } else {
+                    statusText.innerText = `CANLI (${room})`;
+                    connectionStatus.className = "live-badge online";
                 }
-            };
+            }, (error) => {
+                statusText.innerText = "BAĞLANTI KESİLDİ";
+                connectionStatus.className = "live-badge offline";
+                console.error("Firebase error:", error);
+            });
         }
 
         function renderBroadcastTerminated() {
@@ -1039,7 +1032,7 @@
         let clickTimestamps = [];
         let lastChatTime = 0;
 
-        // Send chat banter message to ntfy.sh topic with rate-limiting
+        // Send chat banter message to Firebase
         function sendBanterChat() {
             if (!roomId) return;
             
@@ -1061,21 +1054,17 @@
 
             lastChatTime = now;
 
-            fetch(`https://ntfy.sh/okey101_room_${roomId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    type: 'chat',
-                    name: yanciName || "Yancı",
-                    avatar: yanciAvatar,
-                    message: message
-                })
+            db.ref(`rooms/${roomId}/messages`).push({
+                type: 'chat',
+                name: yanciName || "Yancı",
+                avatar: yanciAvatar,
+                message: message
             }).then(() => {
                 chatInput.value = ""; // Clear input on success
             }).catch(err => console.error("Error sending chat:", err));
         }
 
-        // Send reaction to ntfy.sh topic with rate-limiting & profiles
+        // Send reaction to Firebase with rate-limiting & profiles
         function sendReaction(emoji) {
             if (!roomId) return;
 
@@ -1089,17 +1078,11 @@
 
             clickTimestamps.push(now);
 
-            fetch(`https://ntfy.sh/okey101_room_${roomId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    type: 'reaction',
-                    emoji: emoji,
-                    name: yanciName || "Yancı",
-                    avatar: yanciAvatar
-                })
+            db.ref(`rooms/${roomId}/messages`).push({
+                type: 'reaction',
+                emoji: emoji,
+                name: yanciName || "Yancı",
+                avatar: yanciAvatar
             }).catch(err => console.error("Error sending reaction:", err));
         }
 

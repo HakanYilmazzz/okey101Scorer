@@ -15,16 +15,13 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.isActive
-import java.io.BufferedReader
-import java.io.InputStreamReader
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.json.JSONArray
-import org.json.JSONObject
-import java.io.OutputStreamWriter
-import java.net.HttpURLConnection
-import java.net.URL
 import java.util.UUID
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.ChildEventListener
 
 data class Round(
     val id: String = UUID.randomUUID().toString(),
@@ -150,6 +147,10 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
         _roomId.value = newRoomId
         _isSpectatorActive.value = true
 
+        val database = FirebaseDatabase.getInstance()
+        val roomRef = database.getReference("rooms").child(newRoomId)
+        val messagesRef = roomRef.child("messages")
+
         broadcastJob?.cancel()
         broadcastJob = viewModelScope.launch(Dispatchers.IO) {
             publishState()
@@ -157,50 +158,33 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
 
         reactionListenerJob?.cancel()
         reactionListenerJob = viewModelScope.launch(Dispatchers.IO) {
-            val room = _roomId.value ?: return@launch
-            var connection: HttpURLConnection? = null
-            try {
-                val url = URL("https://ntfy.sh/okey101_room_$room/sse")
-                connection = url.openConnection() as HttpURLConnection
-                connection.setRequestProperty("Accept", "text/event-stream")
-                connection.readTimeout = 0 // Keep connection open
-                connection.connect()
+            messagesRef.addChildEventListener(object : ChildEventListener {
+                override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                    val type = snapshot.child("type").getValue(String::class.java)
+                    val name = snapshot.child("name").getValue(String::class.java) ?: "Yancı"
+                    val avatar = snapshot.child("avatar").getValue(String::class.java) ?: "👤"
 
-                val reader = BufferedReader(InputStreamReader(connection.inputStream, "UTF-8"))
-                var line: String? = null
-                while (isActive && reader.readLine().also { line = it } != null) {
-                    val currentLine = line ?: continue
-                    if (currentLine.startsWith("data:")) {
-                        val dataStr = currentLine.substring(5).trim()
-                        val json = JSONObject(dataStr)
-                        if (json.has("message")) {
-                            val messageBody = json.getString("message")
-                            try {
-                                val msgJson = JSONObject(messageBody)
-                                val type = msgJson.optString("type")
-                                val name = msgJson.optString("name", "Yancı")
-                                val avatar = msgJson.optString("avatar", "👤")
-
-                                if (type == "reaction") {
-                                    val emoji = msgJson.optString("emoji", "👏")
-                                    _incomingReactions.emit(SpectatorReaction(name, avatar, emoji))
-                                } else if (type == "chat") {
-                                    val message = msgJson.optString("message", "")
-                                    if (message.isNotBlank()) {
-                                        _incomingChats.emit(SpectatorChat(senderName = name, senderAvatar = avatar, message = message))
-                                    }
-                                }
-                            } catch (_: Exception) {
-                                // Ignore malformed or different JSON payloads
-                            }
+                    if (type == "reaction") {
+                        val emoji = snapshot.child("emoji").getValue(String::class.java) ?: "👏"
+                        viewModelScope.launch { _incomingReactions.emit(SpectatorReaction(name, avatar, emoji)) }
+                    } else if (type == "chat") {
+                        val message = snapshot.child("message").getValue(String::class.java) ?: ""
+                        if (message.isNotBlank()) {
+                            viewModelScope.launch { _incomingChats.emit(SpectatorChat(senderName = name, senderAvatar = avatar, message = message)) }
                         }
                     }
+                    
+                    // Cleanup message immediately after processing to save space
+                    snapshot.ref.removeValue()
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            } finally {
-                connection?.disconnect()
-            }
+
+                override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {}
+                override fun onChildRemoved(snapshot: DataSnapshot) {}
+                override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
+                override fun onCancelled(error: DatabaseError) {
+                    error.toException().printStackTrace()
+                }
+            })
         }
     }
 
@@ -214,68 +198,35 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
         _isSpectatorActive.value = false
 
         if (currentRoomId != null) {
-            viewModelScope.launch(Dispatchers.IO) {
-                try {
-                    val root = JSONObject().apply {
-                        put("status", "terminated")
-                    }
-                    val jsonPayload = root.toString()
-                    val url = URL("https://ntfy.sh/okey101_room_$currentRoomId")
-                    val connection = url.openConnection() as HttpURLConnection
-                    connection.requestMethod = "POST"
-                    connection.doOutput = true
-                    connection.setRequestProperty("Content-Type", "application/json")
-                    
-                    val writer = OutputStreamWriter(connection.outputStream, "UTF-8")
-                    writer.write(jsonPayload)
-                    writer.flush()
-                    writer.close()
-
-                    connection.responseCode
-                    connection.disconnect()
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
+            val database = FirebaseDatabase.getInstance()
+            val roomRef = database.getReference("rooms").child(currentRoomId)
+            roomRef.child("state").child("status").setValue("terminated")
         }
     }
 
     private suspend fun publishState() {
         val currentRoomId = _roomId.value ?: return
-        val root = JSONObject().apply {
-            put("teamNames", JSONArray(_teamNames.value))
-            put("sums", JSONArray(_columnSums.value))
-            
-            val roundsArray = JSONArray()
-            _rounds.value.forEach { round ->
-                val roundObj = JSONObject().apply {
-                    put("score1", round.score1)
-                    put("score2", round.score2)
-                    put("isScore1Entered", round.isScore1Entered)
-                    put("isScore2Entered", round.isScore2Entered)
-                }
-                roundsArray.put(roundObj)
-            }
-            put("rounds", roundsArray)
-            put("winningMessage", getWinningMessage())
-        }
-        val jsonPayload = root.toString()
+        
+        val stateMap = mapOf(
+            "teamNames" to _teamNames.value,
+            "sums" to _columnSums.value,
+            "rounds" to _rounds.value.map { round ->
+                mapOf(
+                    "score1" to round.score1,
+                    "score2" to round.score2,
+                    "isScore1Entered" to round.isScore1Entered,
+                    "isScore2Entered" to round.isScore2Entered
+                )
+            },
+            "winningMessage" to getWinningMessage(),
+            "status" to "active"
+        )
 
         withContext(Dispatchers.IO) {
             try {
-                val url = URL("https://ntfy.sh/okey101_room_$currentRoomId")
-                val connection = url.openConnection() as HttpURLConnection
-                connection.requestMethod = "POST"
-                connection.doOutput = true
-                connection.setRequestProperty("Content-Type", "application/json")
-                
-                val writer = OutputStreamWriter(connection.outputStream, "UTF-8")
-                writer.write(jsonPayload)
-                writer.flush()
-                writer.close()
-
-                connection.responseCode
-                connection.disconnect()
+                val database = FirebaseDatabase.getInstance()
+                val stateRef = database.getReference("rooms").child(currentRoomId).child("state")
+                stateRef.setValue(stateMap)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
