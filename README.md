@@ -80,7 +80,7 @@ Web arayüzümüz tamamen tek bir `index.html` dosyasına sığdırılmış ve a
    * **Branch**: *main* (veya master) / `/ (root)`
 5. **Save** butonuna tıklayın.
 
-Birkaç saniye içinde web siteniz dünya çapında tamamen ücretsiz olarak **`https://hakanyilmazzz.github.io/okey101Scorer/`** adresinde canlıya alınacaktır! 🎉
+Birkaç saniye içinde web siteniz dünya çapında tamamen ücretsiz olarak **`https://{{username}}.github.io/okey101Scorer/`** adresinde canlıya alınacaktır! 🎉
 
 ---
 
