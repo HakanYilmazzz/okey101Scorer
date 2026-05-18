@@ -274,7 +274,7 @@
             font-size: 13px;
         }
 
-        /* Room Login Styling */
+        /* Room Login & Action Buttons Styling */
         .input-container {
             display: flex;
             gap: 10px;
@@ -315,6 +315,24 @@
         }
 
         .input-container button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(74, 222, 128, 0.3);
+        }
+
+        .home-btn {
+            background-color: var(--accent-green);
+            color: #0F172A;
+            border: none;
+            border-radius: 12px;
+            padding: 14px 28px;
+            font-size: 14px;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .home-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 15px rgba(74, 222, 128, 0.3);
         }
@@ -437,15 +455,40 @@
             eventSource.onmessage = (e) => {
                 try {
                     const eventData = JSON.parse(e.data);
-                    // ntfy.sh sends published payload inside "message" key
                     if (eventData.event === "message" && eventData.message) {
                         const data = JSON.parse(eventData.message);
+                        
+                        // Check if the host terminated the session
+                        if (data.status === "terminated") {
+                            renderBroadcastTerminated();
+                            eventSource.close();
+                            return;
+                        }
+
                         updateScoreBoard(data);
                     }
                 } catch (err) {
                     console.error("Payload parse error:", err);
                 }
             };
+        }
+
+        function renderBroadcastTerminated() {
+            connectionStatus.className = "live-badge offline";
+            statusText.innerText = "YAYIN SONLANDI";
+            
+            appContainer.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">🛑</div>
+                    <div class="empty-text" style="color: var(--accent-red);">CANLI YAYIN SONLANDIRILDI</div>
+                    <div class="empty-subtext" style="margin-bottom: 20px;">Oyun sahibi bu skor tablosunun canlı yayınını sonlandırdı. Yeni bir yayına bağlanmak için aşağıdaki butona basabilirsiniz.</div>
+                    <button id="goHomeBtn" class="home-btn">GİRİŞ EKRANINA DÖN</button>
+                </div>
+            `;
+            
+            document.getElementById('goHomeBtn').addEventListener('click', () => {
+                window.location.search = ""; // Clears query parameters and returns to code entry screen
+            });
         }
 
         function updateScoreBoard(data) {

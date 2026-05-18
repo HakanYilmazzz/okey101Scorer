@@ -134,10 +134,37 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun stopBroadcast() {
+        val currentRoomId = _roomId.value
         broadcastJob?.cancel()
         broadcastJob = null
         _roomId.value = null
         _isSpectatorActive.value = false
+
+        if (currentRoomId != null) {
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    val root = JSONObject().apply {
+                        put("status", "terminated")
+                    }
+                    val jsonPayload = root.toString()
+                    val url = URL("https://ntfy.sh/okey101_room_$currentRoomId")
+                    val connection = url.openConnection() as HttpURLConnection
+                    connection.requestMethod = "POST"
+                    connection.doOutput = true
+                    connection.setRequestProperty("Content-Type", "application/json")
+                    
+                    val writer = OutputStreamWriter(connection.outputStream, "UTF-8")
+                    writer.write(jsonPayload)
+                    writer.flush()
+                    writer.close()
+
+                    val responseCode = connection.responseCode
+                    connection.disconnect()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
     }
 
     private suspend fun publishState() {
