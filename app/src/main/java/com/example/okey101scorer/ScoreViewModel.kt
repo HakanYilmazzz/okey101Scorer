@@ -34,6 +34,20 @@ data class Round(
     val isScore2Entered: Boolean = false
 )
 
+data class SpectatorReaction(
+    val senderName: String,
+    val senderAvatar: String,
+    val emoji: String
+)
+
+data class SpectatorChat(
+    val id: String = UUID.randomUUID().toString(),
+    val senderName: String,
+    val senderAvatar: String,
+    val message: String,
+    val timestamp: Long = System.currentTimeMillis()
+)
+
 class ScoreViewModel(application: Application) : AndroidViewModel(application) {
 
     private val sharedPrefs = application.getSharedPreferences("okey_101_scorer_prefs", Context.MODE_PRIVATE)
@@ -54,8 +68,11 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
     private val _roomId = MutableStateFlow<String?>(null)
     val roomId: StateFlow<String?> = _roomId.asStateFlow()
 
-    private val _incomingReactions = MutableSharedFlow<String>(extraBufferCapacity = 64)
-    val incomingReactions: SharedFlow<String> = _incomingReactions.asSharedFlow()
+    private val _incomingReactions = MutableSharedFlow<SpectatorReaction>(extraBufferCapacity = 64)
+    val incomingReactions: SharedFlow<SpectatorReaction> = _incomingReactions.asSharedFlow()
+
+    private val _incomingChats = MutableSharedFlow<SpectatorChat>(extraBufferCapacity = 64)
+    val incomingChats: SharedFlow<SpectatorChat> = _incomingChats.asSharedFlow()
 
     private var broadcastJob: Job? = null
     private var reactionListenerJob: Job? = null
@@ -164,12 +181,21 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
                             val messageBody = json.getString("message")
                             try {
                                 val msgJson = JSONObject(messageBody)
-                                if (msgJson.has("type") && msgJson.getString("type") == "reaction") {
-                                    val emoji = msgJson.getString("emoji")
-                                    _incomingReactions.emit(emoji)
+                                val type = msgJson.optString("type")
+                                val name = msgJson.optString("name", "Yancı")
+                                val avatar = msgJson.optString("avatar", "👤")
+
+                                if (type == "reaction") {
+                                    val emoji = msgJson.optString("emoji", "👏")
+                                    _incomingReactions.emit(SpectatorReaction(name, avatar, emoji))
+                                } else if (type == "chat") {
+                                    val message = msgJson.optString("message", "")
+                                    if (message.isNotBlank()) {
+                                        _incomingChats.emit(SpectatorChat(senderName = name, senderAvatar = avatar, message = message))
+                                    }
                                 }
                             } catch (_: Exception) {
-                                // Not a reaction JSON payload, ignore safely
+                                // Ignore malformed or different JSON payloads
                             }
                         }
                     }

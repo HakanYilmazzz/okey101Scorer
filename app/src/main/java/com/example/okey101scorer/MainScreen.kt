@@ -81,17 +81,39 @@ fun MainScreen(viewModel: ScoreViewModel) {
     var showSpectatorDialog by remember { mutableStateOf(false) }
 
     val activeParticles = remember { mutableStateListOf<ReactionParticle>() }
+    val visibleChats = remember { mutableStateListOf<SpectatorChat>() }
 
     LaunchedEffect(Unit) {
-        viewModel.incomingReactions.collect { emoji ->
-            if (activeParticles.size < 15) { // Cap at 15 active particles to eliminate lag and visual clutter
-                val newParticle = ReactionParticle(
-                    id = System.nanoTime(),
-                    emoji = emoji,
-                    startX = 0.1f + (Math.random().toFloat() * 0.8f),
-                    duration = 1800 + (Math.random() * 700).toInt()
-                )
-                activeParticles.add(newParticle)
+        // Collect reactions and turn them into floating particles with profiles
+        launch {
+            viewModel.incomingReactions.collect { reaction ->
+                if (activeParticles.size < 15) { // Cap at 15 active particles to eliminate lag and visual clutter
+                    val newParticle = ReactionParticle(
+                        id = System.nanoTime(),
+                        emoji = reaction.emoji,
+                        senderName = reaction.senderName,
+                        senderAvatar = reaction.senderAvatar,
+                        startX = 0.1f + (Math.random().toFloat() * 0.8f),
+                        duration = 1800 + (Math.random() * 700).toInt()
+                    )
+                    activeParticles.add(newParticle)
+                }
+            }
+        }
+
+        // Collect banter chats and display them as bottom-left sliding notifications
+        launch {
+            viewModel.incomingChats.collect { chat ->
+                if (visibleChats.none { it.id == chat.id }) {
+                    if (visibleChats.size >= 3) {
+                        visibleChats.removeAt(0) // Maintain max 3 cards
+                    }
+                    visibleChats.add(chat)
+                    launch {
+                        delay(4000) // Keep message on screen for 4 seconds
+                        visibleChats.remove(chat)
+                    }
+                }
             }
         }
     }
@@ -833,6 +855,84 @@ fun MainScreen(viewModel: ScoreViewModel) {
             )
         }
     }
+
+    // Banter Chat overlay stack positioned elegantly in bottom-left corner
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(bottom = 85.dp, start = 16.dp, end = 16.dp), // Elevated above Bottom SumRow
+        contentAlignment = Alignment.BottomStart
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.Start,
+            modifier = Modifier.width(280.dp) // Premium narrow width for bubble stack
+        ) {
+            visibleChats.forEach { chat ->
+                key(chat.id) {
+                    var isVisible by remember { mutableStateOf(false) }
+                    LaunchedEffect(Unit) {
+                        isVisible = true
+                    }
+                    
+                    AnimatedVisibility(
+                        visible = isVisible,
+                        enter = slideInHorizontally(
+                            initialOffsetX = { -it },
+                            animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+                        ) + fadeIn(animationSpec = tween(durationMillis = 200)),
+                        exit = slideOutHorizontally(
+                            targetOffsetX = { -it },
+                            animationSpec = tween(durationMillis = 300, easing = LinearOutSlowInEasing)
+                        ) + fadeOut(animationSpec = tween(durationMillis = 150))
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = Color(0xE61E293B), // Sleek semi-transparent dark card-bg (1E293B)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(16.dp)),
+                            shadowElevation = 8.dp
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Avatar Capsule
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Color(0x1AFFFFFF),
+                                    modifier = Modifier.size(28.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(text = chat.senderAvatar, fontSize = 16.sp)
+                                    }
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column {
+                                    Text(
+                                        text = chat.senderName.uppercase(),
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Black,
+                                        color = PositiveGreen, // Sleek neon accent green
+                                        letterSpacing = 1.sp
+                                    )
+                                    Spacer(modifier = Modifier.height(1.dp))
+                                    Text(
+                                        text = chat.message,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = Color.White,
+                                        lineHeight = 16.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -1080,6 +1180,8 @@ fun rememberQrCodeBitmap(data: String): Bitmap? {
 data class ReactionParticle(
     val id: Long,
     val emoji: String,
+    val senderName: String,
+    val senderAvatar: String,
     val startX: Float,
     val duration: Int
 )
@@ -1118,12 +1220,43 @@ fun FloatingEmoji(
 
         val sway = 24.dp * sin(animY.value * 3 * Math.PI.toFloat())
 
-        Text(
-            text = particle.emoji,
-            fontSize = 44.sp,
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .offset(x = xOffset + sway, y = yOffset)
                 .graphicsLayer { alpha = animAlpha.value }
-        )
+        ) {
+            Text(
+                text = particle.emoji,
+                fontSize = 44.sp
+            )
+            if (particle.senderName.isNotBlank() && particle.senderName != "Yancı") {
+                Spacer(modifier = Modifier.height(2.dp))
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xCC1E293B), // Sleek semi-transparent dark card-bg (1E293B)
+                    modifier = Modifier
+                        .wrapContentSize()
+                        .border(0.5.dp, Color(0x33FFFFFF), RoundedCornerShape(12.dp))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = particle.senderAvatar,
+                            fontSize = 10.sp
+                        )
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text(
+                            text = particle.senderName.uppercase(),
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Black,
+                            color = Color.White
+                        )
+                    }
+                }
+            }
+        }
     }
 }

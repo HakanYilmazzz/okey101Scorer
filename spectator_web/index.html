@@ -338,21 +338,72 @@
             box-shadow: 0 4px 15px rgba(74, 222, 128, 0.3);
         }
 
-        /* Floating Reaction Bar styling */
-        .reaction-bar {
+        /* Banter Panel (Reactions + Chat) styling */
+        .banter-panel {
             position: fixed;
-            bottom: 24px;
+            bottom: 16px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(30, 41, 59, 0.75);
-            backdrop-filter: blur(16px);
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(20px);
             border: 1px solid var(--border-color);
-            border-radius: 99px;
-            padding: 10px 20px;
+            border-radius: 24px;
+            padding: 12px;
             display: flex;
-            gap: 16px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
             z-index: 100;
+            width: calc(100% - 32px);
+            max-width: 380px;
+        }
+
+        .chat-input-row {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+        }
+
+        #chatMsgInput {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 10px 14px;
+            font-size: 14px;
+            color: var(--text-primary);
+            font-weight: 600;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        #chatMsgInput:focus {
+            border-color: var(--accent-green);
+        }
+
+        #sendChatBtn {
+            background-color: var(--accent-green);
+            color: #0F172A;
+            border: none;
+            border-radius: 14px;
+            padding: 0 16px;
+            font-size: 12px;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        #sendChatBtn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(74, 222, 128, 0.3);
+        }
+
+        .reaction-row-buttons {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .reaction-btn {
@@ -369,6 +420,142 @@
 
         .reaction-btn:active {
             transform: scale(0.9);
+        }
+
+        /* Profile Picker Overlay */
+        .profile-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(16px);
+            display: flex;
+            align-items: center; justify-content: center;
+            z-index: 2000;
+        }
+
+        .profile-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 28px;
+            padding: 32px 24px;
+            width: calc(100% - 32px);
+            max-width: 380px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            display: flex; flex-direction: column; gap: 20px;
+            animation: scaleInCard 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .profile-title {
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            color: var(--accent-green);
+        }
+
+        .profile-subtitle {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 18px;
+        }
+
+        #nicknameInput {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 14px;
+            font-size: 16px;
+            color: var(--text-primary);
+            font-weight: 800;
+            text-align: center;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        #nicknameInput:focus {
+            border-color: var(--accent-green);
+            box-shadow: 0 0 15px rgba(74, 222, 128, 0.2);
+        }
+
+        .avatar-header {
+            font-size: 11px;
+            font-weight: 900;
+            color: var(--text-secondary);
+            letter-spacing: 1px;
+            text-align: left;
+            margin-top: 10px;
+        }
+
+        .avatar-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .avatar-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 12px 6px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.25s ease;
+        }
+
+        .avatar-item:hover {
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        .avatar-item.active {
+            border-color: var(--accent-green);
+            background: rgba(74, 222, 128, 0.08);
+            box-shadow: 0 0 15px rgba(74, 222, 128, 0.15);
+        }
+
+        .avatar-emoji {
+            font-size: 28px;
+        }
+
+        .avatar-label {
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--text-secondary);
+        }
+
+        .avatar-item.active .avatar-label {
+            color: var(--accent-green);
+        }
+
+        #saveProfileBtn {
+            background-color: var(--accent-green);
+            color: #0F172A;
+            border: none;
+            border-radius: 14px;
+            padding: 16px;
+            font-size: 14px;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #saveProfileBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(74, 222, 128, 0.35);
+        }
+
+        /* Shake animation for input on spam */
+        .shake-input {
+            animation: shakeHorizontal 0.4s ease;
+        }
+
+        @keyframes shakeHorizontal {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
         }
 
         /* Animations */
@@ -479,19 +666,140 @@
         <!-- Renders dynamically -->
     </main>
 
-    <!-- Floating Reaction Bar -->
-    <div class="reaction-bar" id="reactionBar" style="display: none;">
-        <button class="reaction-btn" onclick="sendReaction('👏')">👏</button>
-        <button class="reaction-btn" onclick="sendReaction('😂')">😂</button>
-        <button class="reaction-btn" onclick="sendReaction('🔥')">🔥</button>
-        <button class="reaction-btn" onclick="sendReaction('😭')">😭</button>
+    <!-- Floating Banter Panel (Chat & Reactions) -->
+    <div class="banter-panel" id="banterPanel" style="display: none;">
+        <div class="chat-input-row">
+            <input type="text" id="chatMsgInput" placeholder="Masaya laf at... 💬" maxlength="30">
+            <button id="sendChatBtn">GÖNDER</button>
+        </div>
+        <div class="reaction-row-buttons">
+            <button class="reaction-btn" onclick="sendReaction('👏')">👏</button>
+            <button class="reaction-btn" onclick="sendReaction('😂')">😂</button>
+            <button class="reaction-btn" onclick="sendReaction('🔥')">🔥</button>
+            <button class="reaction-btn" onclick="sendReaction('😭')">😭</button>
+        </div>
+    </div>
+
+    <!-- Profile Picker Modal -->
+    <div id="profileModal" class="profile-overlay" style="display: none;">
+        <div class="profile-card">
+            <div class="profile-title">YANCİ PROFİLİ</div>
+            <div class="profile-subtitle">Masadakilerin kimin emoji attığını ve laf soktuğunu görmesi için bir isim gir ve karakterini seç:</div>
+            
+            <input type="text" id="nicknameInput" placeholder="İsmin (Örn: Hakan)" maxlength="10">
+            <div class="avatar-header">Karakterini Seç:</div>
+            <div class="avatar-grid">
+                <div class="avatar-item active" onclick="selectAvatar(this, '☕')">
+                    <span class="avatar-emoji">☕</span>
+                    <span class="avatar-label">Çaycı</span>
+                </div>
+                <div class="avatar-item" onclick="selectAvatar(this, '🧐')">
+                    <span class="avatar-emoji">🧐</span>
+                    <span class="avatar-label">Taktikçi</span>
+                </div>
+                <div class="avatar-item" onclick="selectAvatar(this, '👼')">
+                    <span class="avatar-emoji">👼</span>
+                    <span class="avatar-label">Şans Meleği</span>
+                </div>
+                <div class="avatar-item" onclick="selectAvatar(this, '⚖️')">
+                    <span class="avatar-emoji">⚖️</span>
+                    <span class="avatar-label">Hakem</span>
+                </div>
+                <div class="avatar-item" onclick="selectAvatar(this, '🏎️')">
+                    <span class="avatar-emoji">🏎️</span>
+                    <span class="avatar-label">Hızlı</span>
+                </div>
+                <div class="avatar-item" onclick="selectAvatar(this, '🤫')">
+                    <span class="avatar-emoji">🤫</span>
+                    <span class="avatar-label">Casus</span>
+                </div>
+            </div>
+            
+            <button id="saveProfileBtn">MASAYA KATIL</button>
+            <div id="profileError" style="color: var(--accent-red); font-size: 13px; font-weight: bold; display: none;">Lütfen 1-10 hane arası bir isim girin.</div>
+        </div>
     </div>
 
     <script>
         const appContainer = document.getElementById('appContainer');
         const connectionStatus = document.getElementById('connectionStatus');
         const statusText = document.getElementById('statusText');
-        const reactionBar = document.getElementById('reactionBar');
+        const banterPanel = document.getElementById('banterPanel');
+
+        let yanciName = "";
+        let yanciAvatar = "☕";
+
+        // Check and prompt profile selection at startup
+        document.addEventListener("DOMContentLoaded", () => {
+            if (roomId) {
+                checkYanciProfile();
+            }
+        });
+
+        function checkYanciProfile() {
+            const saved = localStorage.getItem('yanci_profile');
+            if (saved) {
+                try {
+                    const prof = JSON.parse(saved);
+                    yanciName = prof.name;
+                    yanciAvatar = prof.avatar;
+                } catch (e) {
+                    showProfileModal();
+                }
+            } else {
+                showProfileModal();
+            }
+        }
+
+        function showProfileModal() {
+            document.getElementById('profileModal').style.display = 'flex';
+        }
+
+        function selectAvatar(element, emoji) {
+            document.querySelectorAll('.avatar-item').forEach(item => item.classList.remove('active'));
+            element.classList.add('active');
+            yanciAvatar = emoji;
+        }
+
+        function saveProfile() {
+            const nameInput = document.getElementById('nicknameInput');
+            const errorDiv = document.getElementById('profileError');
+            const name = nameInput.value.trim();
+
+            if (name.length >= 1 && name.length <= 10) {
+                yanciName = name;
+                localStorage.setItem('yanci_profile', JSON.stringify({
+                    name: yanciName,
+                    avatar: yanciAvatar
+                }));
+                document.getElementById('profileModal').style.display = 'none';
+            } else {
+                errorDiv.style.display = 'block';
+                nameInput.classList.add('shake-input');
+                setTimeout(() => nameInput.classList.remove('shake-input'), 400);
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            if (e.target && e.target.id === 'saveProfileBtn') {
+                saveProfile();
+            }
+        });
+        
+        document.addEventListener('keypress', (e) => {
+            if (e.target && e.target.id === 'nicknameInput' && e.key === 'Enter') {
+                saveProfile();
+            }
+            if (e.target && e.target.id === 'chatMsgInput' && e.key === 'Enter') {
+                sendBanterChat();
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (e.target && e.target.id === 'sendChatBtn') {
+                sendBanterChat();
+            }
+        });
 
         // Extract Room Code from URL query parameters
         const urlParams = new URLSearchParams(window.location.search);
@@ -507,7 +815,7 @@
 
         function renderRoomInputForm() {
             connectionStatus.style.display = "none";
-            reactionBar.style.display = "none";
+            banterPanel.style.display = "none";
             appContainer.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-icon">📡</div>
@@ -566,8 +874,8 @@
                     if (eventData.event === "message" && eventData.message) {
                         const data = JSON.parse(eventData.message);
                         
-                        // If it is a reaction message, ignore it so it doesn't corrupt our scoreboard rendering!
-                        if (data.type === "reaction") {
+                        // If it is a reaction or chat message, ignore it so it doesn't corrupt our scoreboard rendering!
+                        if (data.type === "reaction" || data.type === "chat") {
                             return;
                         }
 
@@ -589,7 +897,7 @@
         function renderBroadcastTerminated() {
             connectionStatus.className = "live-badge offline";
             statusText.innerText = "YAYIN SONLANDI";
-            reactionBar.style.display = "none";
+            banterPanel.style.display = "none";
             
             appContainer.innerHTML = `
                 <div class="empty-state">
@@ -606,8 +914,8 @@
         }
 
         function updateScoreBoard(data) {
-            // Renders reaction bar once a scoreboard is active
-            reactionBar.style.display = "flex";
+            // Renders banter bar once a scoreboard is active
+            banterPanel.style.display = "flex";
 
             // Check if rounds are empty or payload corrupt
             if (!data.rounds || data.rounds.length === 0) {
@@ -718,16 +1026,51 @@
         }
 
         let clickTimestamps = [];
+        let lastChatTime = 0;
 
-        // Send reaction to ntfy.sh topic with rate-limiting
+        // Send chat banter message to ntfy.sh topic with rate-limiting
+        function sendBanterChat() {
+            if (!roomId) return;
+            
+            const chatInput = document.getElementById('chatMsgInput');
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            // Chat rate limit: 1 message every 3 seconds
+            const now = Date.now();
+            if (now - lastChatTime < 3000) {
+                chatInput.classList.add('shake-input');
+                chatInput.style.borderColor = 'var(--accent-red)';
+                setTimeout(() => {
+                    chatInput.classList.remove('shake-input');
+                    chatInput.style.borderColor = '';
+                }, 400);
+                return;
+            }
+
+            lastChatTime = now;
+
+            fetch(`https://ntfy.sh/okey101_room_${roomId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: 'chat',
+                    name: yanciName || "Yancı",
+                    avatar: yanciAvatar,
+                    message: message
+                })
+            }).then(() => {
+                chatInput.value = ""; // Clear input on success
+            }).catch(err => console.error("Error sending chat:", err));
+        }
+
+        // Send reaction to ntfy.sh topic with rate-limiting & profiles
         function sendReaction(emoji) {
             if (!roomId) return;
 
             const now = Date.now();
-            // Filter click timestamps to keep only those within the last 5 seconds
             clickTimestamps = clickTimestamps.filter(t => now - t < 5000);
             
-            // If they clicked 12 times or more in 5 seconds, trigger rate-limiter block popup!
             if (clickTimestamps.length >= 12) {
                 showChampPopup();
                 return;
@@ -742,7 +1085,9 @@
                 },
                 body: JSON.stringify({
                     type: 'reaction',
-                    emoji: emoji
+                    emoji: emoji,
+                    name: yanciName || "Yancı",
+                    avatar: yanciAvatar
                 })
             }).catch(err => console.error("Error sending reaction:", err));
         }
