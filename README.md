@@ -8,7 +8,8 @@ Bu uygulama, sadece basit bir skor tablosu olmanın ötesinde, masadaki yancıla
 
 ## ✨ Öne Çıkan Özellikler
 
-### 📱 1. Premium & Dinamik Arayüz (Dark Mode)
+### 📱 1. Premium & Dinamik Arayüz (Dark Mode & Aura)
+* **Skora Göre Değişen Dinamik Aura (Mesh Gradients)**: Arka planda kazanan takımın tarafı yeşil, kaybeden tarafı ise kırmızı renkte "nefes alan" sisli bir ışık hüzmesi (aura) ile parlar. Skordaki fark açıldıkça ışığın şiddeti artar.
 * **Modern Tipografi**: Google Fonts *Outfit* yazı tipi ile göz yormayan, premium bir tasarım.
 * **Akıllı Skor Alanları**: Çifte gitme durumunda `-101` ve `-202` cezaları için özel olarak renklendirilmiş (neon kırmızı) hücre tasarımları.
 * **Otomatik Tur İlerleme**: Her iki takımın da skoru girildiğinde otomatik olarak yeni el (satır) açan akıllı algoritma.
@@ -20,21 +21,22 @@ Bu uygulama, sadece basit bir skor tablosu olmanın ötesinde, masadaki yancıla
 * **Kendi Ekranından İzleme**: Masadaki seyirciler (yancılar), oyunu izlemek için telefonunuza eğilmek zorunda kalmaz.
 * **QR Kod veya Manuel Giriş**: Anten butonuna basarak **Seyirci Odası** açabilir, yancılara QR kod okutabilir veya **6 haneli oda kodunu** doğrudan web sitesine yazdırarak bağlanabilirsiniz.
 * **Milisaniyelik Canlı Yayın (Firebase)**: `Firebase Realtime Database` altyapısı sayesinde yancıların tarayıcısında açılan şık web sayfası (`https://hakanyilmazzz.github.io/okey101Scorer/`), masadaki skorları **anlık (real-time)** olarak yansıtır. Tamamen limitsiz ve anında senkronize olur.
-* **👤 Yancı Profilleri (Spectator Avatars)**: Web yayınına bağlanan seyircileri şık bir glassmorphism arayüzlü profil seçim ekranı karşılar. Seyirciler kendi isimlerini (maks 10 karakter) girdikten sonra kendilerine uygun eğlenceli rollerden birini seçerek masaya katılır:
-  * ☕ *Çaycı Yancı*
-  * 🧐 *Taktikçi Yancı*
-  * 👼 *Şans Meleği*
-  * ⚖️ *Hakem Yancı*
-  * 🏎️ *Hızlı Yancı*
-  * 🤫 *Casus Yancı*
-* **💬 "Akan Sohbet" (Live Banter Chat)**: Seyirciler, web arayüzündeki tümleşik banter bar aracılığıyla masadakilere canlı laf atabilir ve taktik verebilir!
-  * **Android Ekranında Kapsül Akışı**: Gelen sohbet mesajları, host'un Android ekranının sol alt köşesinde (klavyeyi ve skorları engellemeyecek şekilde) özel tasarlanmış cam efektli (glassmorphic) bildirim kartları halinde üst üste kayarak belirir. Ekranda aynı anda en fazla 3 aktif sohbet kartı barındırılır ve her kart 4 saniye sonra kendiliğinden süzülerek kaybolur.
-* **👏 Canlı Reaksiyonlar & Uçan İsimlikler**: Yancılar web sayfasındaki dev emojilere dokunarak masaya canlı tepkiler gönderebilir! Gönderilen emojiler, host'un Android ekranında **sinüs dalgalı salınımlarla süzülerek yukarı uçar**. Emojinin hemen altında, reaksiyonu gönderen yancının **adı ve seçtiği karakterin avatarı (Örn: ☕ HAKAN)** şık bir kapsül pill içerisinde uçar!
+* **👤 Seyirci & Oyuncu Profilleri (Avatars)**: Web yayınına bağlanan kişileri şık bir glassmorphism arayüzlü profil seçim ekranı karşılar. Seyirciler kendi isimlerini girdikten sonra kendilerine uygun eğlenceli rollerden birini seçerek masaya katılır:
+  * 👑 *Üstad*
+  * 🪨 *Taş Çalan*
+  * 🎲 *Şanslı*
+  * ☕ *Çaycı*
+  * 🧐 *Taktikçi*
+  * ⚖️ *Hakem*
+* **💬 "Akan Sohbet" (Live Banter Chat Stream)**: 
+  * **Tüm Ekranlarda Ortak Sohbet**: Masaya atılan laflar ve taktikler sadece Host'un telefonunda değil, odadaki tüm yancıların web tarayıcılarında da sol alt köşede "Akan Sohbet" olarak canlı belirir ve 6 saniye sonra eriyerek kaybolur.
+  * **Android Ekranında Kapsül Akışı**: Gelen mesajlar host telefonunda klavyeyi engellemeyecek şekilde cam efektli (glassmorphic) kartlar halinde üst üste kayarak belirir.
+* **👏 Uçan Reaksiyonlar & İsimlikler**: Yancılar dev emojilere dokunarak masaya canlı tepkiler gönderebilir! Gönderilen emojiler, host'un Android ekranında 4-6 saniyelik çok estetik sinüs dalgalı salınımlarla süzülerek yukarı uçar. Emojinin altında kişinin avatarı uçar!
 * **🛡️ Akıllı Spam & Hız Sınırları (Spam-Proof Rates)**:
   * *Reaksiyon Sınırı*: Bir yancı 5 saniye içinde 12'den fazla emoji göndermeye çalışırsa, tarayıcı ekranına animasyonlu şık bir `"SAKİN OL ŞAMPİYON! 🏎️💨"` uyarısı fırlatılır ve istekler geçici olarak engellenir.
   * *Sohbet Sınırı*: Sohbet mesajı göndermek 3 saniyelik bir hız sınırına (rate-limit) tabidir. Seyirci spam atmak istediğinde sohbet girdisinin çerçevesi kırmızıya döner ve input kutusu yatayda titreme (shake) animasyonu yaparak kullanıcıyı uyarır.
   * *Host Koruma Limiti*: Host telefonunda kasma/donma yaşanmaması için ekranda aynı anda en fazla 15 uçan parçacık gösterilir, fazlası kuyruğa alınmadan filtrelenir!
-* **Dinamik Neon Temalar & Otomatik Kapanış**: Seyirci ekranı, lider takıma göre yeşil veya kırmızı neon ışıklarla parlar. Oyun sahibi yayını durdurduğunda ise yancıların ekranları otomatik olarak sonlandırılır ve giriş ekranına yönlendirilir.
+* **Dinamik Aura & Otomatik Kapanış**: Seyirci ekranı da tıpkı uygulama gibi skora göre dinamik "Aura" efektleriyle parlar. Oyun sahibi yayını durdurduğunda ise yancıların ekranlarında uyarı çıkar ve 3 saniye sonra otomatik olarak odadan atılıp ana menüye (oda giriş ekranına) yönlendirilirler.
 
 ### 📳 4. Sallama (Shake) İle Fark Hesaplama Animasyonu
 * **Dramatik Deneyim**: Telefonu salladığınızda masada heyecan yaratacak **2 aşamalı bir animasyon** devreye girer.
