@@ -19,7 +19,7 @@ Bu uygulama, sadece basit bir skor tablosu olmanın ötesinde, masadaki yancıla
 ### 📡 3. Seyirci Modu (Yancılar İçin Canlı Yayın)
 * **Kendi Ekranından İzleme**: Masadaki seyirciler (yancılar), oyunu izlemek için telefonunuza eğilmek zorunda kalmaz.
 * **QR Kod Canlı Yayın**: Uygulamadaki anten butonuna basarak bir **Seyirci Odası** açabilir ve üretilen QR kodu yancılara okutabilirsiniz.
-* **Milisaniyelik SSE (Server-Sent Events) Teknolojisi**: Hiçbir uygulama yüklemeden yancıların tarayıcısında açılan şık web sayfası (`https://fb-ha.github.io/okey101Scorer/`), `ntfy.sh` sunucuları üzerinden skorlarınızı **anlık (real-time)** olarak yansıtır.
+* **Milisaniyelik SSE (Server-Sent Events) Teknolojisi**: Hiçbir uygulama yüklemeden yancıların tarayıcısında açılan şık web sayfası (`https://okey101scorer.vercel.app`), `ntfy.sh` sunucuları üzerinden skorlarınızı **anlık (real-time)** olarak yansıtır.
 * **Dinamik Neon Temalar**: Seyirci ekranı, önde olan takıma göre otomatik olarak yeşil veya kırmızı neon ışıklarla parlar!
 
 ### 📳 4. Sallama (Shake) İle Fark Hesaplama Animasyonu
@@ -52,7 +52,7 @@ Bu uygulama, sadece basit bir skor tablosu olmanın ötesinde, masadaki yancıla
 * **Arayüz**: Vanilla HTML5, CSS3 (Glassmorphism & Neon FX)
 * **Yazı Tipi**: Google Fonts (Outfit & JetBrains Mono)
 * **Haberleşme**: EventSource (Server-Sent Events) ile `ntfy.sh` entegrasyonu
-* **Hosting**: GitHub Pages
+* **Hosting**: Vercel (100% Ücretsiz & Gizli Depoları Destekler)
 
 ---
 
@@ -67,10 +67,13 @@ Bu uygulama, sadece basit bir skor tablosu olmanın ötesinde, masadaki yancıla
 3. Gradle senkronizasyonunun tamamlanmasını bekleyin.
 4. Cihazınızı bağlayın veya emülatör seçip **Run** butonuna basın.
 
-### Seyirci Ekranını Canlıya Almak (GitHub Pages)
-1. GitHub deponuzun **Settings > Pages** ayarlarına gidin.
-2. **Branch** kısmını `main` (veya `master`) olarak seçin, `/ (root)` dizinini işaretleyip **Save** butonuna basın.
-3. Birkaç dakika içinde `https://HakanYilmazzz.github.io/okey101Scorer/` adresinde canlı yayınınız hazır olacaktır!
+### Seyirci Ekranını Canlıya Almak (Vercel ile Ücretsiz)
+1. **vercel.com** adresine giderek ücretsiz bir hesap oluşturun ve GitHub hesabınızı bağlayın.
+2. **Add New > Project** seçeneğine tıklayarak `okey101Scorer` deponuzu (Private olsa dahi) seçip **Import** edin.
+3. Proje ayarları ekranında:
+   * **Root Directory** kısmını `spectator_web` olarak seçin.
+   * **Project Name** kısmını `okey101scorer` yapın (böylece adresiniz `okey101scorer.vercel.app` olur).
+4. **Deploy** butonuna basın. Yaklaşık 20 saniye içinde siteniz tamamen ücretsiz ve gizli olarak yayına girecektir!
 
 ---
 

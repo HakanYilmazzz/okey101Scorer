@@ -702,7 +702,7 @@ fun MainScreen(viewModel: ScoreViewModel) {
                     Spacer(modifier = Modifier.height(16.dp))
 
                     if (isSpectatorActive && roomId != null) {
-                        val spectatorUrl = "https://fb-ha.github.io/okey101Scorer/?room=$roomId"
+                        val spectatorUrl = "https://okey101scorer.vercel.app/?room=$roomId"
                         val qrBitmap = rememberQrCodeBitmap(spectatorUrl)
 
                         Box(
