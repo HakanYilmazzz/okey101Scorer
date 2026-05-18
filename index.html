@@ -1156,12 +1156,16 @@
                 <div class="empty-state">
                     <div class="empty-icon">🛑</div>
                     <h2>Yayın Sona Erdi</h2>
-                    <p>Oda sahibi yayını sonlandırdı.</p>
+                    <p>Oda sahibi yayını sonlandırdı. 3 saniye içinde ana menüye yönlendiriliyorsunuz...</p>
                 </div>
             `;
             statusText.innerText = "YAYIN BİTTİ";
             connectionStatus.className = "live-badge offline";
             banterPanel.style.display = 'none';
+
+            setTimeout(() => {
+                window.location.href = window.location.pathname;
+            }, 3000);
         }
 
         let clickTimestamps = [];
