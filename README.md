@@ -42,7 +42,12 @@ Bu uygulama, sadece basit bir skor tablosu olmanın ötesinde, masadaki yancıla
 * **Dramatik Deneyim**: Telefonu salladığınızda masada heyecan yaratacak **2 aşamalı bir animasyon** devreye girer.
 * Önce ekranda *"Fark Hesaplanıyor..."* ibaresiyle şık bir yükleme halkası döner, ardından 1 saniye sonra kazanan takımın durumuna göre (yeşil, kırmızı veya gri neon çerçeveli) büyük bir **Sonuç Kartı** yay efektiyle ekrana fırlayarak puan farkını gösterir.
 
-### 📲 5. Akıllı Ekran Görüntüsü ve Özet Paylaşımı
+### ⚡ 5. Üst Düzey Performans (Compose Optimizasyonları)
+* **Durum İzolasyonu (State Isolation)**: Numpad klavyesi üzerinde tuşlama yaparken tüm ekranın baştan çizilmesini (Recomposition) engelleyecek şekilde Numpad durumu izole edilmiştir. Sıfır gecikme (lag) ile veri girişi.
+* **Görünüm Önbellekleme (View Caching)**: Numpad menüsü silinip tekrar oluşturulmak yerine `graphicsLayer` ile GPU üzerinde kaydırılarak (TranslationY) donanımsal ivmelendirmeyle çalışır.
+* **Akıllı Çizim (Memoization & Caching)**: Skor listesindeki satırlar (`RoundRow`) anonim lambda blokları dışına çıkartılarak önbelleklenmiş, arka plandaki Aura gradientleri ise işlemciyi yormamak adına yalnızca puan değiştiğinde hesaplanacak şekilde `remember` bloklarına alınmıştır. Uygulama sabit 60 FPS / 120 FPS akıcılığında tepki verir.
+
+### 📲 6. Akıllı Ekran Görüntüsü ve Özet Paylaşımı
 * Tek tuşla skor tablosunun yüksek çözünürlüklü bir ekran görüntüsünü alır.
 * Paylaşım esnasında WhatsApp'ta otomatik olarak şu şekilde **Markdown formatlı, emojili şık bir özet metin** oluşturur:
   > 🎴 **OKEY 101 SKOR TABLOSU** 🎴
