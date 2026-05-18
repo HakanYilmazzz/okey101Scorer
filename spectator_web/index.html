@@ -856,8 +856,8 @@
             statusText.innerText = "BAĞLANIYOR...";
             connectionStatus.className = "live-badge offline";
 
-            // Connect to ntfy.sh server-sent events for our dedicated topic
-            const eventSource = new EventSource(`https://ntfy.sh/okey101_room_${room}/sse`);
+            // Connect to ntfy.sh server-sent events for our dedicated topic and fetch cached messages from up to 12 hours ago
+            const eventSource = new EventSource(`https://ntfy.sh/okey101_room_${room}/sse?since=12h`);
 
             eventSource.onopen = () => {
                 statusText.innerText = `CANLI (${room})`;

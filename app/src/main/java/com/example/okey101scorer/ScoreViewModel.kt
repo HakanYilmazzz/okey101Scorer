@@ -41,11 +41,10 @@ data class SpectatorReaction(
 )
 
 data class SpectatorChat(
-    val id: String = UUID.randomUUID().toString(),
+    val id: Long = System.nanoTime(),
     val senderName: String,
     val senderAvatar: String,
-    val message: String,
-    val timestamp: Long = System.currentTimeMillis()
+    val message: String
 )
 
 class ScoreViewModel(application: Application) : AndroidViewModel(application) {
@@ -153,10 +152,7 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
 
         broadcastJob?.cancel()
         broadcastJob = viewModelScope.launch(Dispatchers.IO) {
-            while (isActive) {
-                publishState()
-                delay(4000) // Periodic update every 4 seconds
-            }
+            publishState()
         }
 
         reactionListenerJob?.cancel()

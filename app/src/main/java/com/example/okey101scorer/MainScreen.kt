@@ -100,19 +100,16 @@ fun MainScreen(viewModel: ScoreViewModel) {
                 }
             }
         }
-
-        // Collect banter chats and display them as bottom-left sliding notifications
+        // Collect incoming chats
         launch {
             viewModel.incomingChats.collect { chat ->
-                if (visibleChats.none { it.id == chat.id }) {
-                    if (visibleChats.size >= 3) {
-                        visibleChats.removeAt(0) // Maintain max 3 cards
-                    }
-                    visibleChats.add(chat)
-                    launch {
-                        delay(4000) // Keep message on screen for 4 seconds
-                        visibleChats.remove(chat)
-                    }
+                if (visibleChats.size >= 4) {
+                    visibleChats.removeAt(0)
+                }
+                visibleChats.add(chat)
+                launch {
+                    delay(5000)
+                    visibleChats.remove(chat)
                 }
             }
         }
