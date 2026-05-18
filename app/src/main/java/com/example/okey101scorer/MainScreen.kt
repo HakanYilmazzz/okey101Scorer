@@ -19,7 +19,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -44,7 +43,6 @@ import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
-import kotlin.math.sin
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.draw.drawBehind
@@ -71,7 +69,6 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import kotlin.math.sqrt
-import kotlin.math.sin
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -131,15 +128,13 @@ fun MainScreen(viewModel: ScoreViewModel) {
     }
 
     var showNumpad by remember { mutableStateOf(false) }
-    var editColIndex by remember { mutableStateOf(-1) }
+    var editColIndex by remember { mutableIntStateOf(-1) }
     var editRoundId by remember { mutableStateOf("") }
     var editValue by remember { mutableStateOf("") }
-    
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     // Edit Team Name State
     var showRenameDialog by remember { mutableStateOf(false) }
-    var editingTeamIndex by remember { mutableStateOf(-1) }
+    var editingTeamIndex by remember { mutableIntStateOf(-1) }
     var tempTeamName by remember { mutableStateOf("") }
 
     // Reset Game State
@@ -543,54 +538,20 @@ fun MainScreen(viewModel: ScoreViewModel) {
                     val isOdd = index % 2 != 0
                     val rowBackground = if (isOdd) ZebraStripeTint else Color.Transparent
 
-                    @Composable
-                    fun RoundRowContent() {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(rowBackground)
-                                .height(IntrinsicSize.Min),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            val scoresArray = arrayOf(round.score1, round.score2)
-                            
-                            // Left Zone (Biz)
-                            ScoreCell(
-                                value = scoresArray[0],
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxHeight()
-                                    .background(bgTint1),
-                                onClick = {
-                                    editColIndex = 0
-                                    editRoundId = round.id
-                                    editValue = if (scoresArray[0] == 0) "" else scoresArray[0].toString()
-                                    showNumpad = true
-                                }
-                            )
-                            
-                            VerticalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
-
-                            // Right Zone (Onlar)
-                            ScoreCell(
-                                value = scoresArray[1],
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxHeight()
-                                    .background(bgTint2),
-                                onClick = {
-                                    editColIndex = 1
-                                    editRoundId = round.id
-                                    editValue = if (scoresArray[1] == 0) "" else scoresArray[1].toString()
-                                    showNumpad = true
-                                }
-                            )
-                        }
-                    }
-
                     if (index == 0) {
                         Box(modifier = Modifier.animateItem()) {
-                            RoundRowContent()
+                            RoundRow(
+                                round = round,
+                                rowBackground = rowBackground,
+                                bgTint1 = bgTint1,
+                                bgTint2 = bgTint2,
+                                onScoreClick = { colIndex, roundId, valueStr ->
+                                    editColIndex = colIndex
+                                    editRoundId = roundId
+                                    editValue = valueStr
+                                    showNumpad = true
+                                }
+                            )
                         }
                     } else {
                         val dismissState = rememberSwipeToDismissBoxState(
@@ -637,7 +598,18 @@ fun MainScreen(viewModel: ScoreViewModel) {
                                 }
                             }
                         ) {
-                            RoundRowContent()
+                            RoundRow(
+                                round = round,
+                                rowBackground = rowBackground,
+                                bgTint1 = bgTint1,
+                                bgTint2 = bgTint2,
+                                onScoreClick = { colIndex, roundId, valueStr ->
+                                    editColIndex = colIndex
+                                    editRoundId = roundId
+                                    editValue = valueStr
+                                    showNumpad = true
+                                }
+                            )
                         }
                     }
                 }
@@ -696,64 +668,15 @@ fun MainScreen(viewModel: ScoreViewModel) {
         )
     }
 
-    AnimatedVisibility(
-        visible = showNumpad,
-        enter = fadeIn(animationSpec = tween(600)),
-        exit = fadeOut(animationSpec = tween(600))
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.5f))
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null
-                ) { showNumpad = false },
-            contentAlignment = Alignment.BottomCenter
-        ) {
-            AnimatedVisibility(
-                visible = showNumpad,
-                enter = slideInVertically(
-                    initialOffsetY = { it },
-                    animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing)
-                ),
-                exit = slideOutVertically(
-                    targetOffsetY = { it },
-                    animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing)
-                )
-            ) {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) {},
-                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainer
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(
-                            modifier = Modifier
-                                .padding(vertical = 22.dp)
-                                .width(32.dp)
-                                .height(4.dp)
-                                .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), RoundedCornerShape(2.dp))
-                        )
-                        CustomNumpad(
-                            currentValue = editValue,
-                            onValueChange = { editValue = it },
-                            onDone = {
-                                val newValue = editValue.toIntOrNull() ?: 0
-                                viewModel.updateCell(editRoundId, editColIndex, newValue)
-                                showNumpad = false
-                            }
-                        )
-                    }
-                }
-            }
+    NumpadOverlay(
+        showNumpad = showNumpad,
+        initialValue = editValue,
+        onDismiss = { showNumpad = false },
+        onDone = { newValue ->
+            viewModel.updateCell(editRoundId, editColIndex, newValue)
+            showNumpad = false
         }
-    }
+    )
 
     if (showSpectatorDialog) {
         Dialog(
@@ -1001,23 +924,6 @@ fun ScoreCell(
         else -> MaterialTheme.colorScheme.onSurface
     }
 
-    val scale = remember { Animatable(1f) }
-
-    LaunchedEffect(value) {
-        if (value != 0) {
-            scale.snapTo(1.4f)
-            scale.animateTo(
-                targetValue = 1f,
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessMedium
-                )
-            )
-        } else {
-            scale.snapTo(1f)
-        }
-    }
-
     val displayValue = if (value == 0) "" else value.toString()
     val emoji = if (value == -202) " 🔥" else ""
 
@@ -1027,7 +933,6 @@ fun ScoreCell(
             .height(72.dp)
             .clickable(onClick = onClick)
             .padding(4.dp)
-            .scale(scale.value)
             .background(backgroundColor, RoundedCornerShape(8.dp)),
         contentAlignment = Alignment.Center
     ) {
@@ -1046,7 +951,7 @@ fun ScoreCell(
 fun SumRow(sums: List<Int>, roundCount: Int) {
     val sum1 = sums.getOrNull(0) ?: 0
     val sum2 = sums.getOrNull(1) ?: 0
-    val diff = Math.abs(sum1 - sum2)
+    val diff = kotlin.math.abs(sum1 - sum2)
 
     Surface(
         modifier = Modifier
@@ -1155,7 +1060,7 @@ fun ShakeDetector(onShake: () -> Unit) {
                     val gZ = event.values[2]
 
                     val gForce = sqrt((gX * gX + gY * gY + gZ * gZ).toDouble()).toFloat()
-                    val acceleration = Math.abs(gForce - SensorManager.GRAVITY_EARTH)
+                    val acceleration = kotlin.math.abs(gForce - SensorManager.GRAVITY_EARTH)
 
                     if (acceleration > shakeThreshold) {
                         lastUpdate = curTime
@@ -1266,7 +1171,7 @@ fun FloatingEmoji(
         val xOffset = screenWidth * particle.startX
         val yOffset = screenHeight * animY.value
 
-        val sway = 24.dp * sin(animY.value * 3 * Math.PI.toFloat())
+        val sway = 24.dp * kotlin.math.sin(animY.value * 3 * Math.PI.toFloat())
 
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -1306,5 +1211,119 @@ fun FloatingEmoji(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun NumpadOverlay(
+    showNumpad: Boolean,
+    initialValue: String,
+    onDismiss: () -> Unit,
+    onDone: (Int) -> Unit
+) {
+    // Isolate the typing state so it DOES NOT recompose the massive MainScreen!
+    var localValue by remember(showNumpad, initialValue) { mutableStateOf(initialValue) }
+    
+    val numpadOffset by animateFloatAsState(
+        targetValue = if (showNumpad) 0f else 1f,
+        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+        label = "numpadOffset"
+    )
+    val numpadAlpha by animateFloatAsState(
+        targetValue = if (showNumpad) 1f else 0f,
+        animationSpec = tween(durationMillis = 200),
+        label = "numpadAlpha"
+    )
+
+    // Keep it in composition but invisible/offscreen
+    if (numpadAlpha > 0f || showNumpad) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer { alpha = numpadAlpha }
+                .background(Color.Black.copy(alpha = 0.6f))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) { onDismiss() },
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .graphicsLayer {
+                        translationY = size.height * numpadOffset
+                    }
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {},
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                color = MaterialTheme.colorScheme.surfaceContainer
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(
+                        modifier = Modifier
+                            .padding(vertical = 22.dp)
+                            .width(32.dp)
+                            .height(4.dp)
+                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), RoundedCornerShape(2.dp))
+                    )
+                    CustomNumpad(
+                        currentValue = localValue,
+                        onValueChange = { localValue = it },
+                        onDone = {
+                            val newValue = localValue.toIntOrNull() ?: 0
+                            onDone(newValue)
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun RoundRow(
+    round: Round,
+    rowBackground: Color,
+    bgTint1: Color,
+    bgTint2: Color,
+    onScoreClick: (colIndex: Int, roundId: String, currentValue: String) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(rowBackground)
+            .height(IntrinsicSize.Min),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        val scoresArray = arrayOf(round.score1, round.score2)
+        
+        // Left Zone (Biz)
+        ScoreCell(
+            value = scoresArray[0],
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .background(bgTint1),
+            onClick = {
+                onScoreClick(0, round.id, if (scoresArray[0] == 0) "" else scoresArray[0].toString())
+            }
+        )
+        
+        VerticalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+
+        // Right Zone (Onlar)
+        ScoreCell(
+            value = scoresArray[1],
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .background(bgTint2),
+            onClick = {
+                onScoreClick(1, round.id, if (scoresArray[1] == 0) "" else scoresArray[1].toString())
+            }
+        )
     }
 }
