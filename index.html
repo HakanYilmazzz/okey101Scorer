@@ -856,6 +856,16 @@
             statusText.innerText = "BAĞLANIYOR...";
             connectionStatus.className = "live-badge offline";
 
+            // Show a premium glassmorphic loading card immediately so the page is never blank!
+            appContainer.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">⏳</div>
+                    <div class="empty-text">BAĞLANTI KURULUYOR...</div>
+                    <div class="empty-subtext">Okey masasına bağlanılıyor, lütfen bekleyin...</div>
+                    <span class="room-badge">ODA: ${room}</span>
+                </div>
+            `;
+
             // Connect to ntfy.sh server-sent events for our dedicated topic
             const eventSource = new EventSource(`https://ntfy.sh/okey101_room_${room}/sse`);
 
@@ -871,22 +881,22 @@
 
             eventSource.onmessage = (e) => {
                 try {
-                    // Micro-optimization: skip JSON parse for high-frequency spectator reactions and chats
-                    if (e.data && (e.data.includes('"type":"reaction"') || e.data.includes('"type":"chat"'))) {
-                        return;
-                    }
-
                     const eventData = JSON.parse(e.data);
                     if (eventData.event === "message" && eventData.message) {
-                        // Double check in case of varying envelope formats
-                        if (eventData.message.includes('"type":"reaction"') || eventData.message.includes('"type":"chat"')) {
+                        let data;
+                        if (typeof eventData.message === "string") {
+                            data = JSON.parse(eventData.message);
+                        } else {
+                            data = eventData.message;
+                        }
+
+                        // If it is a reaction or chat message, ignore it immediately so it doesn't corrupt our scoreboard!
+                        if (data && (data.type === "reaction" || data.type === "chat")) {
                             return;
                         }
 
-                        const data = JSON.parse(eventData.message);
-
                         // Check if the host terminated the session
-                        if (data.status === "terminated") {
+                        if (data && data.status === "terminated") {
                             renderBroadcastTerminated();
                             eventSource.close();
                             return;
