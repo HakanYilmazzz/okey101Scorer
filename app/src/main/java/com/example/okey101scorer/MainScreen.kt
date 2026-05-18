@@ -42,7 +42,9 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import kotlin.math.sin
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -66,6 +68,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import kotlin.math.sqrt
+import kotlin.math.sin
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -76,6 +79,20 @@ fun MainScreen(viewModel: ScoreViewModel) {
     val isSpectatorActive by viewModel.isSpectatorActive.collectAsState()
     val roomId by viewModel.roomId.collectAsState()
     var showSpectatorDialog by remember { mutableStateOf(false) }
+
+    var activeParticles by remember { mutableStateOf(listOf<ReactionParticle>()) }
+
+    LaunchedEffect(Unit) {
+        viewModel.incomingReactions.collect { emoji ->
+            val newParticle = ReactionParticle(
+                id = System.nanoTime(),
+                emoji = emoji,
+                startX = 0.1f + (Math.random().toFloat() * 0.8f),
+                duration = 2000 + (Math.random() * 1000).toInt()
+            )
+            activeParticles = activeParticles + newParticle
+        }
+    }
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -802,6 +819,18 @@ fun MainScreen(viewModel: ScoreViewModel) {
             }
         }
     }
+
+    // Floating emoji particles layer
+    activeParticles.forEach { particle ->
+        key(particle.id) {
+            FloatingEmoji(
+                particle = particle,
+                onAnimationFinished = {
+                    activeParticles = activeParticles.filter { it.id != particle.id }
+                }
+            )
+        }
+    }
 }
 
 @Composable
@@ -1044,4 +1073,55 @@ fun rememberQrCodeBitmap(data: String): Bitmap? {
         }
     }
     return bitmap
+}
+
+data class ReactionParticle(
+    val id: Long,
+    val emoji: String,
+    val startX: Float,
+    val duration: Int
+)
+
+@Composable
+fun FloatingEmoji(
+    particle: ReactionParticle,
+    onAnimationFinished: () -> Unit
+) {
+    val animY = remember { Animatable(1f) }
+    val animAlpha = remember { Animatable(1f) }
+
+    LaunchedEffect(Unit) {
+        launch {
+            animY.animateTo(
+                targetValue = 0f,
+                animationSpec = tween(durationMillis = particle.duration, easing = LinearEasing)
+            )
+            onAnimationFinished()
+        }
+        launch {
+            delay((particle.duration * 0.5f).toLong())
+            animAlpha.animateTo(
+                targetValue = 0f,
+                animationSpec = tween(durationMillis = (particle.duration * 0.5f).toInt(), easing = LinearEasing)
+            )
+        }
+    }
+
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val screenWidth = maxWidth
+        val screenHeight = maxHeight
+
+        val xOffset = screenWidth * particle.startX
+        val yOffset = screenHeight * animY.value
+
+        val sway = 24.dp * sin(animY.value * 3 * Math.PI.toFloat())
+
+        Text(
+            text = particle.emoji,
+            fontSize = 44.sp,
+            modifier = Modifier
+                .offset(x = xOffset + sway, y = yOffset)
+                .graphicsLayer { alpha = animAlpha.value }
+        )
+    }
 }

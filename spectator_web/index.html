@@ -37,7 +37,7 @@
             flex-direction: column;
             align-items: center;
             overflow-x: hidden;
-            padding: 16px;
+            padding: 16px 16px 80px 16px; /* Bottom padding so reaction bar doesn't overlap contents */
         }
 
         /* Top Header styling */
@@ -337,6 +337,39 @@
             box-shadow: 0 4px 15px rgba(74, 222, 128, 0.3);
         }
 
+        /* Floating Reaction Bar styling */
+        .reaction-bar {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(30, 41, 59, 0.75);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 99px;
+            padding: 10px 20px;
+            display: flex;
+            gap: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            z-index: 100;
+        }
+
+        .reaction-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .reaction-btn:hover {
+            transform: scale(1.3) rotate(5deg);
+        }
+
+        .reaction-btn:active {
+            transform: scale(0.9);
+        }
+
         /* Animations */
         @keyframes pulse {
             from { opacity: 0.6; }
@@ -356,7 +389,7 @@
         /* Responsive adjustments */
         @media (max-width: 480px) {
             body {
-                padding: 10px;
+                padding: 10px 10px 80px 10px;
             }
             .sum-value {
                 font-size: 28px;
@@ -381,10 +414,19 @@
         <!-- Renders dynamically -->
     </main>
 
+    <!-- Floating Reaction Bar -->
+    <div class="reaction-bar" id="reactionBar" style="display: none;">
+        <button class="reaction-btn" onclick="sendReaction('👏')">👏</button>
+        <button class="reaction-btn" onclick="sendReaction('😂')">😂</button>
+        <button class="reaction-btn" onclick="sendReaction('🔥')">🔥</button>
+        <button class="reaction-btn" onclick="sendReaction('😭')">😭</button>
+    </div>
+
     <script>
         const appContainer = document.getElementById('appContainer');
         const connectionStatus = document.getElementById('connectionStatus');
         const statusText = document.getElementById('statusText');
+        const reactionBar = document.getElementById('reactionBar');
 
         // Extract Room Code from URL query parameters
         const urlParams = new URLSearchParams(window.location.search);
@@ -400,6 +442,7 @@
 
         function renderRoomInputForm() {
             connectionStatus.style.display = "none";
+            reactionBar.style.display = "none";
             appContainer.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-icon">📡</div>
@@ -476,6 +519,7 @@
         function renderBroadcastTerminated() {
             connectionStatus.className = "live-badge offline";
             statusText.innerText = "YAYIN SONLANDI";
+            reactionBar.style.display = "none";
             
             appContainer.innerHTML = `
                 <div class="empty-state">
@@ -492,6 +536,9 @@
         }
 
         function updateScoreBoard(data) {
+            // Renders reaction bar once a scoreboard is active
+            reactionBar.style.display = "flex";
+
             // Check if rounds are empty or payload corrupt
             if (!data.rounds || data.rounds.length === 0) {
                 appContainer.innerHTML = `
@@ -598,6 +645,21 @@
             if (value === -101) return "round-cell penalty-light";
             if (value === -202) return "round-cell penalty-dark";
             return "";
+        }
+
+        // Send reaction to ntfy.sh topic
+        function sendReaction(emoji) {
+            if (!roomId) return;
+            fetch(`https://ntfy.sh/okey101_room_${roomId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    type: 'reaction',
+                    emoji: emoji
+                })
+            }).catch(err => console.error("Error sending reaction:", err));
         }
     </script>
 </body>

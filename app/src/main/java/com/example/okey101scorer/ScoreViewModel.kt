@@ -10,7 +10,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.isActive
+import java.io.BufferedReader
+import java.io.InputStreamReader
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -48,7 +53,11 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
     private val _roomId = MutableStateFlow<String?>(null)
     val roomId: StateFlow<String?> = _roomId.asStateFlow()
 
+    private val _incomingReactions = MutableSharedFlow<String>(extraBufferCapacity = 64)
+    val incomingReactions: SharedFlow<String> = _incomingReactions.asSharedFlow()
+
     private var broadcastJob: Job? = null
+    private var reactionListenerJob: Job? = null
 
     // Undo state tracking
     private var lastDeletedRound: Round? = null
@@ -131,12 +140,52 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
                 delay(4000) // Periodic update every 4 seconds
             }
         }
+
+        reactionListenerJob?.cancel()
+        reactionListenerJob = viewModelScope.launch(Dispatchers.IO) {
+            val room = _roomId.value ?: return@launch
+            var connection: HttpURLConnection? = null
+            try {
+                val url = URL("https://ntfy.sh/okey101_room_$room/sse")
+                connection = url.openConnection() as HttpURLConnection
+                connection.setRequestProperty("Accept", "text/event-stream")
+                connection.readTimeout = 0 // Keep connection open
+                connection.connect()
+
+                val reader = BufferedReader(InputStreamReader(connection.inputStream, "UTF-8"))
+                var line: String? = null
+                while (isActive && reader.readLine().also { line = it } != null) {
+                    if (line!!.startsWith("data:")) {
+                        val dataStr = line!!.substring(5).trim()
+                        val json = JSONObject(dataStr)
+                        if (json.has("message")) {
+                            val messageBody = json.getString("message")
+                            try {
+                                val msgJson = JSONObject(messageBody)
+                                if (msgJson.has("type") && msgJson.getString("type") == "reaction") {
+                                    val emoji = msgJson.getString("emoji")
+                                    _incomingReactions.emit(emoji)
+                                }
+                            } catch (e: Exception) {
+                                // Not a reaction JSON payload, ignore safely
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                connection?.disconnect()
+            }
+        }
     }
 
     fun stopBroadcast() {
         val currentRoomId = _roomId.value
         broadcastJob?.cancel()
         broadcastJob = null
+        reactionListenerJob?.cancel()
+        reactionListenerJob = null
         _roomId.value = null
         _isSpectatorActive.value = false
 

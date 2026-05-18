@@ -16,11 +16,12 @@ Bu uygulama, sadece basit bir skor tablosu olmanın ötesinde, masadaki yancıla
 ### 💾 2. Yerel Kayıt Güvencesi (Offline Persistence)
 * **Asla Kaybolmayan Skorlar**: Oyunu oynarken telefonun şarjı bitse, uygulama kapansa veya kazara kapatsanız bile skorlarınız `SharedPreferences` altyapısı sayesinde anında kaydedilir. Uygulamayı açtığınızda kaldığınız yerden devam edersiniz.
 
-### 📡 3. Seyirci Modu (Yancılar İçin Canlı Yayın)
+### 📡 3. Seyirci Modu (Yancılar İçin Canlı Yayın & İnteraktif Reaksiyonlar)
 * **Kendi Ekranından İzleme**: Masadaki seyirciler (yancılar), oyunu izlemek için telefonunuza eğilmek zorunda kalmaz.
-* **QR Kod Canlı Yayın**: Uygulamadaki anten butonuna basarak bir **Seyirci Odası** açabilir ve üretilen QR kodu yancılara okutabilirsiniz.
-* **Milisaniyelik SSE (Server-Sent Events) Teknolojisi**: Hiçbir uygulama yüklemeden yancıların tarayıcısında açılan şık web sayfası (`https://okey101scorer.vercel.app`), `ntfy.sh` sunucuları üzerinden skorlarınızı **anlık (real-time)** olarak yansıtır.
-* **Dinamik Neon Temalar**: Seyirci ekranı, önde olan takıma göre otomatik olarak yeşil veya kırmızı neon ışıklarla parlar!
+* **QR Kod veya Manuel Giriş**: Anten butonuna basarak **Seyirci Odası** açabilir, yancılara QR kod okutabilir veya **6 haneli oda kodunu** doğrudan web sitesine yazdırarak bağlanabilirsiniz.
+* **Milisaniyelik Canlı Yayın (SSE)**: `ntfy.sh` altyapısı ve Server-Sent Events sayesinde yancıların tarayıcısında açılan şık web sayfası (`https://okey101scorer.vercel.app`), masadaki skorları **anlık (real-time)** olarak yansıtır.
+* **Canlı Reaksiyonlar (Laf Atma Emojileri) 👏 😂 🔥 😭**: Yancılar web sayfasındaki dev emojilere dokunarak masaya canlı tepkiler gönderebilir! Gönderilen emojiler, oyun sahibinin telefon ekranında **sinüs dalgalı salınımlarla süzülerek uçar (floating particles)**!
+* **Dinamik Neon Temalar & Otomatik Kapanış**: Seyirci ekranı, lider takıma göre yeşil veya kırmızı neon ışıklarla parlar. Oyun sahibi yayını durdurduğunda ise yancıların ekranları otomatik olarak sonlandırılır ve giriş ekranına yönlendirilir.
 
 ### 📳 4. Sallama (Shake) İle Fark Hesaplama Animasyonu
 * **Dramatik Deneyim**: Telefonu salladığınızda masada heyecan yaratacak **2 aşamalı bir animasyon** devreye girer.
