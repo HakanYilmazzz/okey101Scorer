@@ -80,17 +80,19 @@ fun MainScreen(viewModel: ScoreViewModel) {
     val roomId by viewModel.roomId.collectAsState()
     var showSpectatorDialog by remember { mutableStateOf(false) }
 
-    var activeParticles by remember { mutableStateOf(listOf<ReactionParticle>()) }
+    val activeParticles = remember { mutableStateListOf<ReactionParticle>() }
 
     LaunchedEffect(Unit) {
         viewModel.incomingReactions.collect { emoji ->
-            val newParticle = ReactionParticle(
-                id = System.nanoTime(),
-                emoji = emoji,
-                startX = 0.1f + (Math.random().toFloat() * 0.8f),
-                duration = 2000 + (Math.random() * 1000).toInt()
-            )
-            activeParticles = activeParticles + newParticle
+            if (activeParticles.size < 15) { // Cap at 15 active particles to eliminate lag and visual clutter
+                val newParticle = ReactionParticle(
+                    id = System.nanoTime(),
+                    emoji = emoji,
+                    startX = 0.1f + (Math.random().toFloat() * 0.8f),
+                    duration = 1800 + (Math.random() * 700).toInt()
+                )
+                activeParticles.add(newParticle)
+            }
         }
     }
 
@@ -719,7 +721,7 @@ fun MainScreen(viewModel: ScoreViewModel) {
                     Spacer(modifier = Modifier.height(16.dp))
 
                     if (isSpectatorActive && roomId != null) {
-                        val spectatorUrl = "https://okey101scorer.vercel.app/?room=$roomId"
+                        val spectatorUrl = "https://hakanyilmazzz.github.io/okey101Scorer/?room=$roomId"
                         val qrBitmap = rememberQrCodeBitmap(spectatorUrl)
 
                         Box(
@@ -826,7 +828,7 @@ fun MainScreen(viewModel: ScoreViewModel) {
             FloatingEmoji(
                 particle = particle,
                 onAnimationFinished = {
-                    activeParticles = activeParticles.filter { it.id != particle.id }
+                    activeParticles.remove(particle)
                 }
             )
         }
