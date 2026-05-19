@@ -3,7 +3,6 @@ package com.example.okey101scorer
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -11,6 +10,8 @@ import android.hardware.SensorManager
 import android.net.Uri
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.qrcode.QRCodeWriter
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -21,11 +22,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Podcasts
@@ -55,19 +53,13 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.FileProvider
 import com.example.okey101scorer.ui.theme.NegativeRed
-import com.example.okey101scorer.ui.theme.PenaltyDarkRed
-import com.example.okey101scorer.ui.theme.PenaltyLightRed
 import com.example.okey101scorer.ui.theme.PositiveGreen
-import com.example.okey101scorer.ui.theme.ZebraStripeTint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
-import java.net.HttpURLConnection
-import java.net.URL
-import java.net.URLEncoder
 import kotlin.math.sqrt
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -310,33 +302,35 @@ fun MainScreen(viewModel: ScoreViewModel) {
             }
         }
     }
-    val auraColors = remember(columnSums) {
-        val sum1 = columnSums.getOrNull(0) ?: 0
-        val sum2 = columnSums.getOrNull(1) ?: 0
-        val diff = kotlin.math.abs(sum1 - sum2)
-        
-        val maxGap = 800f
-        val intensity = (diff / maxGap).coerceIn(0f, 1f)
+    val auraColors by remember {
+        derivedStateOf {
+            val sum1 = columnSums.getOrNull(0) ?: 0
+            val sum2 = columnSums.getOrNull(1) ?: 0
+            val diff = kotlin.math.abs(sum1 - sum2)
 
-        val isBizWinning = sum1 < sum2
-        val isOnlarWinning = sum2 < sum1
+            val maxGap = 800f
+            val intensity = (diff / maxGap).coerceIn(0f, 1f)
 
-        val winningColor = Color(0xFF10B981) // Emerald Green
-        val losingColor = Color(0xFFEF4444) // Red
-        val neutralColor = Color(0xFF1E293B) // Slate 800
+            val isBizWinning = sum1 < sum2
+            val isOnlarWinning = sum2 < sum1
 
-        val leftColor = when {
-            isBizWinning -> winningColor.copy(alpha = 0.15f + 0.35f * intensity)
-            isOnlarWinning -> losingColor.copy(alpha = 0.05f + 0.15f * intensity)
-            else -> neutralColor.copy(alpha = 0.2f)
+            val winningColor = Color(0xFF10B981) // Emerald Green
+            val losingColor = Color(0xFFEF4444) // Red
+            val neutralColor = Color(0xFF1E293B) // Slate 800
+
+            val leftColor = when {
+                isBizWinning -> winningColor.copy(alpha = 0.15f + 0.35f * intensity)
+                isOnlarWinning -> losingColor.copy(alpha = 0.05f + 0.15f * intensity)
+                else -> neutralColor.copy(alpha = 0.2f)
+            }
+
+            val rightColor = when {
+                isOnlarWinning -> winningColor.copy(alpha = 0.15f + 0.35f * intensity)
+                isBizWinning -> losingColor.copy(alpha = 0.05f + 0.15f * intensity)
+                else -> neutralColor.copy(alpha = 0.2f)
+            }
+            Pair(leftColor, rightColor)
         }
-        
-        val rightColor = when {
-            isOnlarWinning -> winningColor.copy(alpha = 0.15f + 0.35f * intensity)
-            isBizWinning -> losingColor.copy(alpha = 0.05f + 0.15f * intensity)
-            else -> neutralColor.copy(alpha = 0.2f)
-        }
-        Pair(leftColor, rightColor)
     }
 
     Scaffold(
@@ -422,7 +416,7 @@ fun MainScreen(viewModel: ScoreViewModel) {
         },
         bottomBar = {
             val playedHandsCount = rounds.count { it.score1 != 0 || it.score2 != 0 }
-            SumRow(sums = columnSums, roundCount = playedHandsCount)
+            com.example.okey101scorer.components.SumBar(sums = columnSums, roundCount = playedHandsCount)
         }
     ) { paddingValues ->
         Column(
@@ -463,8 +457,8 @@ fun MainScreen(viewModel: ScoreViewModel) {
             val sum2 = columnSums.getOrNull(1) ?: 0
             
             val maxGap = 800f // Gap points at which background becomes fully red
-            val fraction1 = ((sum1 - sum2).coerceAtLeast(0) / maxGap).coerceIn(0f, 1f)
-            val fraction2 = ((sum2 - sum1).coerceAtLeast(0) / maxGap).coerceIn(0f, 1f)
+            val fraction1 by remember { derivedStateOf { ((sum1 - sum2).coerceAtLeast(0) / maxGap).coerceIn(0f, 1f) } }
+            val fraction2 by remember { derivedStateOf { ((sum2 - sum1).coerceAtLeast(0) / maxGap).coerceIn(0f, 1f) } }
 
             val calmGreen = Color.Transparent
             val alarmRed = Color(0x1AF87171)  // 10% Red
@@ -481,142 +475,32 @@ fun MainScreen(viewModel: ScoreViewModel) {
             )
 
             // Sticky Team Headers (Elevated)
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                shadowElevation = 4.dp
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = teamNames[0],
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable {
-                                editingTeamIndex = 0
-                                tempTeamName = teamNames[0]
-                                showRenameDialog = true
-                            },
-                        textAlign = TextAlign.Center,
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 24.sp,
-                        color = Color.White
-                    )
-                    
-                    VerticalDivider(
-                        modifier = Modifier.height(32.dp),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
-                    )
-                    
-                    Text(
-                        text = teamNames[1],
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable {
-                                editingTeamIndex = 1
-                                tempTeamName = teamNames[1]
-                                showRenameDialog = true
-                            },
-                        textAlign = TextAlign.Center,
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 24.sp,
-                        color = Color.White
-                    )
+            com.example.okey101scorer.components.TeamHeader(
+                teamNames = teamNames,
+                onTeamClick = { index, name ->
+                    editingTeamIndex = index
+                    tempTeamName = name
+                    showRenameDialog = true
                 }
-            }
+            )
 
             // Dynamic Rows with SwipeToDismiss
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                contentPadding = PaddingValues(bottom = 88.dp)
-            ) {
-                itemsIndexed(items = rounds, key = { _, round -> round.id }) { index, round ->
-                    
-                    val isOdd = index % 2 != 0
-                    val rowBackground = if (isOdd) ZebraStripeTint else Color.Transparent
-
-                    if (index == 0) {
-                        Box(modifier = Modifier.animateItem()) {
-                            RoundRow(
-                                round = round,
-                                rowBackground = rowBackground,
-                                bgTint1 = bgTint1,
-                                bgTint2 = bgTint2,
-                                onScoreClick = { colIndex, roundId, valueStr ->
-                                    editColIndex = colIndex
-                                    editRoundId = roundId
-                                    editValue = valueStr
-                                    showNumpad = true
-                                }
-                            )
-                        }
-                    } else {
-                        val dismissState = rememberSwipeToDismissBoxState(
-                            confirmValueChange = {
-                                if (it == SwipeToDismissBoxValue.EndToStart || it == SwipeToDismissBoxValue.StartToEnd) {
-                                    viewModel.deleteRound(round.id)
-                                    coroutineScope.launch {
-                                        val result = snackbarHostState.showSnackbar(
-                                            message = "El silindi",
-                                            actionLabel = "Geri Al",
-                                            duration = SnackbarDuration.Short
-                                        )
-                                        if (result == SnackbarResult.ActionPerformed) {
-                                            viewModel.undoDelete()
-                                        }
-                                    }
-                                    true
-                                } else {
-                                    false
-                                }
-                            }
-                        )
-
-                        SwipeToDismissBox(
-                            state = dismissState,
-                            enableDismissFromStartToEnd = false,
-                            modifier = Modifier.animateItem(),
-                            backgroundContent = {
-                                if (dismissState.targetValue != SwipeToDismissBoxValue.Settled) {
-                                    val color = PenaltyDarkRed
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .background(color)
-                                            .padding(horizontal = 20.dp),
-                                        contentAlignment = Alignment.CenterEnd
-                                    ) {
-                                        Icon(
-                                            Icons.Default.Delete,
-                                            contentDescription = "Sil",
-                                            tint = Color.White
-                                        )
-                                    }
-                                }
-                            }
-                        ) {
-                            RoundRow(
-                                round = round,
-                                rowBackground = rowBackground,
-                                bgTint1 = bgTint1,
-                                bgTint2 = bgTint2,
-                                onScoreClick = { colIndex, roundId, valueStr ->
-                                    editColIndex = colIndex
-                                    editRoundId = roundId
-                                    editValue = valueStr
-                                    showNumpad = true
-                                }
-                            )
-                        }
-                    }
+            com.example.okey101scorer.components.RoundList(
+                listState = listState,
+                rounds = rounds,
+                bgTint1 = bgTint1,
+                bgTint2 = bgTint2,
+                snackbarHostState = snackbarHostState,
+                modifier = Modifier.weight(1f),
+                onDeleteRound = { id -> viewModel.deleteRound(id) },
+                onUndoDelete = { viewModel.undoDelete() },
+                onScoreClick = { colIndex, roundId, valueStr ->
+                    editColIndex = colIndex
+                    editRoundId = roundId
+                    editValue = valueStr
+                    showNumpad = true
                 }
-            }
+            )
         }
     }
 
@@ -909,138 +793,6 @@ fun MainScreen(viewModel: ScoreViewModel) {
     }
 }
 
-@Composable
-fun ScoreCell(
-    value: Int,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    val backgroundColor = when (value) {
-        -101 -> PenaltyLightRed
-        -202 -> PenaltyDarkRed
-        else -> Color.Transparent
-    }
-    
-    val textColor = when (value) {
-        -101 -> Color.White
-        -202 -> Color.White
-        else -> MaterialTheme.colorScheme.onSurface
-    }
-
-    val displayValue = if (value == 0) "" else value.toString()
-    val emoji = if (value == -202) " 🔥" else ""
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(72.dp)
-            .clickable(onClick = onClick)
-            .padding(4.dp)
-            .background(backgroundColor, RoundedCornerShape(8.dp)),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = "$displayValue$emoji",
-            textAlign = TextAlign.Center,
-            fontWeight = FontWeight.Black,
-            fontSize = 32.sp,
-            fontFamily = FontFamily.Monospace,
-            color = textColor
-        )
-    }
-}
-
-@Composable
-fun SumRow(sums: List<Int>, roundCount: Int) {
-    val sum1 = sums.getOrNull(0) ?: 0
-    val sum2 = sums.getOrNull(1) ?: 0
-    val diff = kotlin.math.abs(sum1 - sum2)
-
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(12.dp),
-        shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shadowElevation = 24.dp 
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp),
-        ) {
-            Text(
-                text = "TOPLAM ($roundCount El)",
-                fontWeight = FontWeight.Black,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                textAlign = TextAlign.Center,
-                letterSpacing = 2.sp
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Left Column Sum
-                val color1 = if (sum1 < 0) NegativeRed else PositiveGreen
-                AnimatedContent(
-                    targetState = sum1,
-                    transitionSpec = {
-                        if (targetState > initialState) {
-                            (slideInVertically { height -> height } + fadeIn()).togetherWith(slideOutVertically { height -> -height } + fadeOut())
-                        } else {
-                            (slideInVertically { height -> -height } + fadeIn()).togetherWith(slideOutVertically { height -> height } + fadeOut())
-                        }
-                    },
-                    modifier = Modifier.weight(1f),
-                    label = "sum1_anim"
-                ) { targetSum ->
-                    val targetCrown1 = if (diff >= 500 && targetSum < sum2) " 👑" else ""
-                    Text(
-                        text = "$targetSum$targetCrown1",
-                        textAlign = TextAlign.Center,
-                        fontWeight = FontWeight.Black,
-                        fontSize = 36.sp,
-                        fontFamily = FontFamily.Monospace,
-                        color = color1
-                    )
-                }
-
-                VerticalDivider(
-                    modifier = Modifier.height(40.dp),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
-                )
-
-                // Right Column Sum
-                val color2 = if (sum2 < 0) NegativeRed else PositiveGreen
-                AnimatedContent(
-                    targetState = sum2,
-                    transitionSpec = {
-                        if (targetState > initialState) {
-                            (slideInVertically { height -> height } + fadeIn()).togetherWith(slideOutVertically { height -> -height } + fadeOut())
-                        } else {
-                            (slideInVertically { height -> -height } + fadeIn()).togetherWith(slideOutVertically { height -> height } + fadeOut())
-                        }
-                    },
-                    modifier = Modifier.weight(1f),
-                    label = "sum2_anim"
-                ) { targetSum ->
-                    val targetCrown2 = if (diff >= 500 && targetSum < sum1) " 👑" else ""
-                    Text(
-                        text = "$targetSum$targetCrown2",
-                        textAlign = TextAlign.Center,
-                        fontWeight = FontWeight.Black,
-                        fontSize = 36.sp,
-                        fontFamily = FontFamily.Monospace,
-                        color = color2
-                    )
-                }
-            }
-        }
-    }
-}
 
 @Composable
 fun ShakeDetector(onShake: () -> Unit) {
@@ -1115,15 +867,19 @@ fun rememberQrCodeBitmap(data: String): Bitmap? {
     var bitmap by remember(data) { mutableStateOf<Bitmap?>(null) }
     LaunchedEffect(data) {
         if (data.isNotEmpty()) {
-            withContext(Dispatchers.IO) {
+            withContext(Dispatchers.Default) {
                 try {
-                    val url = URL("https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=10&data=${URLEncoder.encode(data, "UTF-8")}")
-                    val connection = url.openConnection() as HttpURLConnection
-                    connection.doInput = true
-                    connection.connect()
-                    val input = connection.inputStream
-                    bitmap = BitmapFactory.decodeStream(input)
-                    connection.disconnect()
+                    val writer = QRCodeWriter()
+                    val bitMatrix = writer.encode(data, BarcodeFormat.QR_CODE, 400, 400)
+                    val width = bitMatrix.width
+                    val height = bitMatrix.height
+                    val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
+                    for (x in 0 until width) {
+                        for (y in 0 until height) {
+                            bmp.setPixel(x, y, if (bitMatrix[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE)
+                        }
+                    }
+                    bitmap = bmp
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
@@ -1286,47 +1042,4 @@ fun NumpadOverlay(
     }
 }
 
-@Composable
-fun RoundRow(
-    round: Round,
-    rowBackground: Color,
-    bgTint1: Color,
-    bgTint2: Color,
-    onScoreClick: (colIndex: Int, roundId: String, currentValue: String) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(rowBackground)
-            .height(IntrinsicSize.Min),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        val scoresArray = arrayOf(round.score1, round.score2)
-        
-        // Left Zone (Biz)
-        ScoreCell(
-            value = scoresArray[0],
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .background(bgTint1),
-            onClick = {
-                onScoreClick(0, round.id, if (scoresArray[0] == 0) "" else scoresArray[0].toString())
-            }
-        )
-        
-        VerticalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
 
-        // Right Zone (Onlar)
-        ScoreCell(
-            value = scoresArray[1],
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .background(bgTint2),
-            onClick = {
-                onScoreClick(1, round.id, if (scoresArray[1] == 0) "" else scoresArray[1].toString())
-            }
-        )
-    }
-}

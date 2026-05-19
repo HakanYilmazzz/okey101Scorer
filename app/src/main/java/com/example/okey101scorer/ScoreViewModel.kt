@@ -2,7 +2,6 @@ package com.example.okey101scorer
 
 import android.app.Application
 import android.content.Context
-import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -15,12 +14,22 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.firstOrNull
 import java.util.UUID
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ChildEventListener
 
+val Context.dataStore by preferencesDataStore(name = "okey_101_prefs")
+
+@Serializable
 data class Round(
     val id: String = UUID.randomUUID().toString(),
     val score1: Int = 0,
@@ -44,7 +53,7 @@ data class SpectatorChat(
 
 class ScoreViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val sharedPrefs = application.getSharedPreferences("okey_101_scorer_prefs", Context.MODE_PRIVATE)
+    private val dataStore = application.dataStore
 
     private val _teamNames = MutableStateFlow(listOf("BİZ", "ONLAR"))
     val teamNames: StateFlow<List<String>> = _teamNames.asStateFlow()
@@ -79,63 +88,66 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
         loadData()
     }
 
+    private val ROUNDS_KEY = stringPreferencesKey("rounds")
+    private val TEAM_NAMES_KEY = stringPreferencesKey("teamNames")
+
     private fun serializeRounds(roundsList: List<Round>): String {
-        return roundsList.joinToString(";") { 
-            "${it.id},${it.score1},${it.score2},${it.isScore1Entered},${it.isScore2Entered}" 
-        }
+        return Json.encodeToString(roundsList)
     }
 
     private fun deserializeRounds(serialized: String): List<Round> {
         if (serialized.isBlank()) return listOf(Round())
         return try {
-            serialized.split(";").map { row ->
-                val parts = row.split(",")
-                Round(
-                    id = parts[0],
-                    score1 = parts[1].toIntOrNull() ?: 0,
-                    score2 = parts[2].toIntOrNull() ?: 0,
-                    isScore1Entered = parts[3].toBooleanStrictOrNull() ?: false,
-                    isScore2Entered = parts[4].toBooleanStrictOrNull() ?: false
-                )
-            }
+            Json.decodeFromString(serialized)
         } catch (_: Exception) {
             listOf(Round())
         }
     }
 
     private fun saveData() {
-        val serializedRounds = serializeRounds(_rounds.value)
-        val serializedTeamNames = _teamNames.value.joinToString(",")
-        sharedPrefs.edit {
-            putString("rounds", serializedRounds)
-            putString("teamNames", serializedTeamNames)
-        }
-
-        // Trigger immediate live broadcast if active
-        if (_isSpectatorActive.value) {
-            viewModelScope.launch(Dispatchers.IO) {
+        val currentRounds = _rounds.value.toList()
+        val currentTeamNames = _teamNames.value.toList()
+        
+        viewModelScope.launch(Dispatchers.IO) {
+            val serializedRounds = serializeRounds(currentRounds)
+            val serializedTeamNames = Json.encodeToString(currentTeamNames)
+            
+            dataStore.edit { prefs ->
+                prefs[ROUNDS_KEY] = serializedRounds
+                prefs[TEAM_NAMES_KEY] = serializedTeamNames
+            }
+            
+            // Trigger immediate live broadcast if active
+            if (_isSpectatorActive.value) {
                 publishState()
             }
         }
     }
 
     private fun loadData() {
-        val serializedRounds = sharedPrefs.getString("rounds", "") ?: ""
-        val serializedTeamNames = sharedPrefs.getString("teamNames", "") ?: ""
+        viewModelScope.launch(Dispatchers.IO) {
+            val prefs = dataStore.data.firstOrNull()
+            val serializedRounds = prefs?.get(ROUNDS_KEY) ?: ""
+            val serializedTeamNames = prefs?.get(TEAM_NAMES_KEY) ?: ""
 
-        if (serializedTeamNames.isNotEmpty()) {
-            val names = serializedTeamNames.split(",")
-            if (names.size == 2) {
-                _teamNames.value = names
+            if (serializedTeamNames.isNotEmpty()) {
+                try {
+                    val names = Json.decodeFromString<List<String>>(serializedTeamNames)
+                    if (names.size == 2) {
+                        _teamNames.value = names
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
-        }
 
-        if (serializedRounds.isNotEmpty()) {
-            _rounds.value = deserializeRounds(serializedRounds)
-        } else {
-            _rounds.value = listOf(Round())
+            if (serializedRounds.isNotEmpty()) {
+                _rounds.value = deserializeRounds(serializedRounds)
+            } else {
+                _rounds.value = listOf(Round())
+            }
+            calculateSums()
         }
-        calculateSums()
     }
 
     // Broadcast logic
