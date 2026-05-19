@@ -14,12 +14,14 @@ Bu uygulama, sadece basit bir skor tablosu olmanın ötesinde, masadaki yancıla
 * **Akıllı Skor Alanları**: Çifte gitme durumunda `-101` ve `-202` cezaları için özel olarak renklendirilmiş (neon kırmızı) hücre tasarımları.
 * **Otomatik Tur İlerleme**: Her iki takımın da skoru girildiğinde otomatik olarak yeni el (satır) açan akıllı algoritma.
 
-### 💾 2. Yerel Kayıt Güvencesi (Offline Persistence)
-* **Asla Kaybolmayan Skorlar**: Oyunu oynarken telefonun şarjı bitse, uygulama kapansa veya kazara kapatsanız bile skorlarınız `SharedPreferences` altyapısı sayesinde anında kaydedilir. Uygulamayı açtığınızda kaldığınız yerden devam edersiniz.
+### 💾 2. Yerel Kayıt Güvencesi (DataStore & Serialization)
+* **Asenkron ve Güvenilir Kayıt**: Uygulama içi veriler, modern `Preferences DataStore` mimarisi kullanılarak arka planda (asenkron) kaydedilir. Arayüzde hiçbir bloklanma veya takılma yaşanmaz.
+* **Veri Bütünlüğü**: Skorlar ve oyun durumları `Kotlinx Serialization` ile güvenli bir şekilde JSON formatına çevrilerek saklanır. Şarjınız bitse veya uygulama kapansa bile oyununuz saniyesi saniyesine güvendedir.
 
 ### 📡 3. Seyirci Modu & "Akan Sohbet" (Interactive Spectator & Live Banter Chat)
 * **Kendi Ekranından İzleme**: Masadaki seyirciler (yancılar), oyunu izlemek için telefonunuza eğilmek zorunda kalmaz.
-* **QR Kod veya Manuel Giriş**: Anten butonuna basarak **Seyirci Odası** açabilir, yancılara QR kod okutabilir veya **6 haneli oda kodunu** doğrudan web sitesine yazdırarak bağlanabilirsiniz.
+* **Yerel (Local) QR Kod ile Hızlı Bağlantı**: Dış bir API'ye bağımlı olmadan uygulamanın kendi içinde (`ZXing Core` ile) oluşturduğu karekod ile seyirciler (yancılar) saniyeler içinde odaya katılabilir. İnternet yavaşlasa dahi QR kodunuz anında hazırdır.
+* **Manuel Giriş**: İstenirse **6 haneli oda kodunu** doğrudan web sitesine girerek de bağlanabilirsiniz.
 * **Milisaniyelik Canlı Yayın (Firebase)**: `Firebase Realtime Database` altyapısı sayesinde yancıların tarayıcısında açılan şık web sayfası (`https://hakanyilmazzz.github.io/okey101Scorer/`), masadaki skorları **anlık (real-time)** olarak yansıtır. Tamamen limitsiz ve anında senkronize olur.
 * **👤 Seyirci & Oyuncu Profilleri (Avatars)**: Web yayınına bağlanan kişileri şık bir glassmorphism arayüzlü profil seçim ekranı karşılar. Seyirciler kendi isimlerini girdikten sonra kendilerine uygun eğlenceli rollerden birini seçerek masaya katılır:
   * 👑 *Üstad*
@@ -43,9 +45,10 @@ Bu uygulama, sadece basit bir skor tablosu olmanın ötesinde, masadaki yancıla
 * Önce ekranda *"Fark Hesaplanıyor..."* ibaresiyle şık bir yükleme halkası döner, ardından 1 saniye sonra kazanan takımın durumuna göre (yeşil, kırmızı veya gri neon çerçeveli) büyük bir **Sonuç Kartı** yay efektiyle ekrana fırlayarak puan farkını gösterir.
 
 ### ⚡ 5. Üst Düzey Performans (Compose Optimizasyonları)
-* **Durum İzolasyonu (State Isolation)**: Numpad klavyesi üzerinde tuşlama yaparken tüm ekranın baştan çizilmesini (Recomposition) engelleyecek şekilde Numpad durumu izole edilmiştir. Sıfır gecikme (lag) ile veri girişi.
+* **Bileşen Mimarisi (Componentization)**: Binlerce satırlık ana ekran, küçük ve tekrar kullanılabilir bileşenlere (`TeamHeader`, `RoundList`, `SumBar`) bölünerek yalnızca değişen alanların yeniden çizilmesi (recomposition) sağlandı.
+* **Durum İzolasyonu (State Isolation) & derivedStateOf**: Numpad gibi klavye girişleri izole edilmiş, aura renkleri ve fark hesaplamaları gibi pahalı işlemler `derivedStateOf` ile sınırlandırılmıştır. Gereksiz hiçbir hesaplama veya çizim yapılmaz.
 * **Görünüm Önbellekleme (View Caching)**: Numpad menüsü silinip tekrar oluşturulmak yerine `graphicsLayer` ile GPU üzerinde kaydırılarak (TranslationY) donanımsal ivmelendirmeyle çalışır.
-* **Akıllı Çizim (Memoization & Caching)**: Skor listesindeki satırlar (`RoundRow`) anonim lambda blokları dışına çıkartılarak önbelleklenmiş, arka plandaki Aura gradientleri ise işlemciyi yormamak adına yalnızca puan değiştiğinde hesaplanacak şekilde `remember` bloklarına alınmıştır. Uygulama sabit 60 FPS / 120 FPS akıcılığında tepki verir.
+* **Asenkron I/O**: Diske yazma işlemleri (`DataStore`) arka planda çalışarak ana iş parçacığını (Main Thread) meşgul etmez. Uygulama her daim sabit 60 FPS / 120 FPS akıcılığında tepki verir.
 
 ### 📲 6. Akıllı Ekran Görüntüsü ve Özet Paylaşımı
 * Tek tuşla skor tablosunun yüksek çözünürlüklü bir ekran görüntüsünü alır.
@@ -66,6 +69,8 @@ Bu uygulama, sadece basit bir skor tablosu olmanın ötesinde, masadaki yancıla
 * **Dil**: Kotlin
 * **Arayüz**: Jetpack Compose (Modern Bildirimsel UI)
 * **Mimari**: MVVM (AndroidViewModel ile yerel veri yönetimi)
+* **Veri Katmanı**: Preferences DataStore & Kotlinx Serialization
+* **Karekod Üretimi**: ZXing Core (Yerel/Tam Bağımsız)
 * **Asenkron Motor**: Kotlin Coroutines & Flow (StateFlow, SharedFlow)
 * **Sensörler**: Android SensorManager (İvmeölçer ile Shake tespiti)
 
