@@ -73,45 +73,145 @@
             padding: 12px 16px;
             margin-bottom: 16px;
             border-bottom: 1px solid var(--border-color);
+            background: rgba(15, 23, 42, 0.25);
+            border-radius: 16px;
         }
 
-        .logo {
-            font-weight: 900;
-            font-size: 20px;
-            letter-spacing: 2px;
-            background: linear-gradient(135deg, #F1F5F9 0%, #94A3B8 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .live-badge {
+        /* Sol Blok (Kullanıcı Kimliği) */
+        .header-left {
             display: flex;
             align-items: center;
+            gap: 10px;
+        }
+
+        .header-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 800;
+            color: #FFFFFF;
+            font-size: 15px;
+            text-transform: uppercase;
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+        }
+
+        .header-user-info {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+        }
+
+        .header-tag {
+            font-size: 9px;
+            color: var(--text-secondary);
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            line-height: 1;
+            margin-bottom: 2px;
+        }
+
+        .header-username {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--text-primary);
+            line-height: 1.2;
+            max-width: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Orta Blok (Canlı Yayın Rozeti) */
+        .header-middle {
+            display: none; /* Hide on mobile by default */
+            align-items: center;
             gap: 6px;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(239, 68, 68, 0.08);
             padding: 6px 12px;
             border-radius: 99px;
-            font-size: 12px;
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            font-size: 11px;
             font-weight: 800;
+            letter-spacing: 0.5px;
+            color: #EF4444;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .header-live-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background-color: #EF4444;
+            box-shadow: 0 0 8px #EF4444;
+            animation: pulse-red 1.5s infinite alternate;
+        }
+
+        /* offline / bağlantı kesik durumu */
+        .header-middle.offline {
+            background: rgba(245, 158, 11, 0.08);
+            border-color: rgba(245, 158, 11, 0.25);
+            color: #F59E0B;
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.15);
+        }
+        .header-middle.offline .header-live-dot {
+            background-color: #F59E0B;
+            box-shadow: 0 0 8px #F59E0B;
+            animation: none;
+        }
+
+        @keyframes pulse-red {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            100% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 12px #EF4444; }
+        }
+
+        @media (min-width: 576px) {
+            .header-middle {
+                display: flex;
+            }
+        }
+
+        /* Sağ Blok (Masa İstatistikleri & Çıkış) */
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-stats {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 4px 8px;
+            border-radius: 8px;
             border: 1px solid var(--border-color);
         }
 
-        .live-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background-color: var(--text-secondary);
+        .header-exit-btn {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #F87171;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 5px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
 
-        .live-badge.online .live-dot {
-            background-color: var(--accent-green);
-            box-shadow: 0 0 10px var(--accent-green);
-            animation: pulse 1.5s infinite alternate;
-        }
-
-        .live-badge.offline .live-dot {
-            background-color: var(--accent-red);
-            box-shadow: 0 0 10px var(--accent-red);
+        .header-exit-btn:hover {
+            background: rgba(239, 68, 68, 0.8);
+            color: #FFFFFF;
+            border-color: #EF4444;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
         }
 
         /* Main Container styling */
@@ -717,11 +817,28 @@
 </head>
 <body>
 
-    <header>
-        <span class="logo">OKEY 101</span>
-        <div id="connectionStatus" class="live-badge offline">
-            <span class="live-dot"></span>
-            <span id="statusText">ÇEVRİMDİŞİ</span>
+    <header id="topHeader" style="display: none;">
+        <!-- SOL BLOK (Kullanıcı Kimliği) -->
+        <div class="header-left">
+            <div id="headerAvatar" class="header-avatar">?</div>
+            <div class="header-user-info">
+                <span class="header-tag">YANCI MASASI</span>
+                <span id="headerUsername" class="header-username">Misafir</span>
+            </div>
+        </div>
+        
+        <!-- ORTA BLOK (Canlı Yayın Rozeti) -->
+        <div id="connectionStatus" class="header-middle offline">
+            <span class="header-live-dot"></span>
+            <span id="statusText">BAĞLANIYOR</span>
+        </div>
+        
+        <!-- SAĞ BLOK (Masa İstatistikleri & Çıkış) -->
+        <div class="header-right">
+            <div class="header-stats" title="Aktif Seyirci Sayısı">
+                👁️ <span id="spectatorCount">0</span>
+            </div>
+            <button class="header-exit-btn" onclick="exitRoom()">ÇIKIŞ</button>
         </div>
     </header>
     <!-- Dynamic Aura Background -->
@@ -812,6 +929,7 @@
 
         let yanciName = "";
         let yanciAvatar = "👑";
+        let mySpectatorRef = null;
 
         // Check and prompt profile selection at startup
         document.addEventListener("DOMContentLoaded", () => {
@@ -827,6 +945,8 @@
                     const prof = JSON.parse(saved);
                     yanciName = prof.name;
                     yanciAvatar = prof.avatar;
+                    updateHeaderProfileUI();
+                    registerSpectatorPresence(roomId);
                 } catch (e) {
                     showProfileModal();
                 }
@@ -845,6 +965,48 @@
             yanciAvatar = emoji;
         }
 
+        function updateHeaderProfileUI() {
+            const headerAvatar = document.getElementById('headerAvatar');
+            const headerUsername = document.getElementById('headerUsername');
+            if (headerUsername && headerAvatar) {
+                if (yanciName) {
+                    headerUsername.innerText = yanciName;
+                    headerAvatar.innerText = yanciName.charAt(0).toUpperCase();
+                } else {
+                    headerUsername.innerText = "Misafir";
+                    headerAvatar.innerText = "?";
+                }
+            }
+        }
+
+        function registerSpectatorPresence(room) {
+            if (!room) return;
+            if (mySpectatorRef) return; // Prevent double presence triggers
+
+            const spectatorsRef = db.ref(`rooms/${room}/spectators`);
+            mySpectatorRef = spectatorsRef.push();
+            mySpectatorRef.set({
+                name: yanciName || "Misafir Yancı",
+                avatar: yanciAvatar || "👑",
+                joinedAt: firebase.database.ServerValue.TIMESTAMP
+            });
+            mySpectatorRef.onDisconnect().remove();
+
+            spectatorsRef.on('value', (snapshot) => {
+                const count = snapshot.numChildren();
+                const countSpan = document.getElementById('spectatorCount');
+                if (countSpan) countSpan.innerText = count;
+            });
+        }
+
+        function exitRoom() {
+            if (mySpectatorRef) {
+                mySpectatorRef.remove();
+                mySpectatorRef = null;
+            }
+            window.location.search = "";
+        }
+
         function saveProfile() {
             const nameInput = document.getElementById('nicknameInput');
             const errorDiv = document.getElementById('profileError');
@@ -856,6 +1018,8 @@
                     name: yanciName,
                     avatar: yanciAvatar
                 }));
+                updateHeaderProfileUI();
+                registerSpectatorPresence(roomId);
                 document.getElementById('profileModal').style.display = 'none';
             } else {
                 errorDiv.style.display = 'block';
@@ -892,13 +1056,14 @@
         let lastData = null;
 
         if (!roomId) {
+            document.getElementById('topHeader').style.display = "none";
             renderRoomInputForm();
         } else {
+            document.getElementById('topHeader').style.display = "flex";
             initSSEConnection(roomId);
         }
 
         function renderRoomInputForm() {
-            connectionStatus.style.display = "none";
             banterPanel.style.display = "none";
             appContainer.innerHTML = `
                 <div class="empty-state">
@@ -935,9 +1100,9 @@
         }
 
         function initSSEConnection(room) {
-            connectionStatus.style.display = "flex";
-            statusText.innerText = "BAĞLANIYOR...";
-            connectionStatus.className = "live-badge offline";
+            document.getElementById('topHeader').style.display = "flex";
+            statusText.innerText = "BAĞLANIYOR";
+            connectionStatus.className = "header-middle offline";
 
             const stateRef = db.ref(`rooms/${room}/state`);
             const messagesRef = db.ref(`rooms/${room}/messages`);
@@ -954,8 +1119,8 @@
                 const data = snapshot.val();
                 
                 if (data) {
-                    statusText.innerText = `CANLI (${room})`;
-                    connectionStatus.className = "live-badge online";
+                    statusText.innerText = "CANLI";
+                    connectionStatus.className = "header-middle";
 
                     if (data.status === "terminated") {
                         renderBroadcastTerminated();
@@ -965,18 +1130,18 @@
 
                     updateScoreBoard(data);
                 } else {
-                    statusText.innerText = `CANLI (${room})`;
-                    connectionStatus.className = "live-badge online";
+                    statusText.innerText = "CANLI";
+                    connectionStatus.className = "header-middle";
                 }
             }, (error) => {
                 statusText.innerText = "BAĞLANTI KESİLDİ";
-                connectionStatus.className = "live-badge offline";
+                connectionStatus.className = "header-middle offline";
                 console.error("Firebase error:", error);
             });
         }
 
         function renderBroadcastTerminated() {
-            connectionStatus.className = "live-badge offline";
+            connectionStatus.className = "header-middle offline";
             statusText.innerText = "YAYIN SONLANDI";
             banterPanel.style.display = "none";
             
@@ -1239,7 +1404,7 @@
                 </div>
             `;
             statusText.innerText = "YAYIN BİTTİ";
-            connectionStatus.className = "live-badge offline";
+            connectionStatus.className = "header-middle offline";
             banterPanel.style.display = 'none';
 
             setTimeout(() => {
