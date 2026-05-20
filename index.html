@@ -789,6 +789,11 @@
         </div>
     </div>
 
+    <!-- Event Dialog Overlay for Web -->
+    <div id="webEventDialog" class="champ-overlay" style="display: none;">
+        <!-- Renders dynamically from Firebase -->
+    </div>
+
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
@@ -1073,8 +1078,82 @@
                 `;
             });
 
+            // Handle Event Dialog Overlay
+            const eventDialogEl = document.getElementById('webEventDialog');
+            if (data.activeEventDialog) {
+                const dlg = data.activeEventDialog;
+                eventDialogEl.style.display = 'flex';
+                
+                let innerHtml = '';
+                if (dlg.type === 'MysteryBox') {
+                    const txt = dlg.amount > 0 ? `${dlg.teamName} takımına +${dlg.amount} CEZA çıktı! 🥶` : (dlg.amount < 0 ? `${dlg.teamName} takımına ${dlg.amount} ÖDÜL çıktı! 😎` : `Kutu boş çıktı! Herkese geçmiş olsun. 😅`);
+                    innerHtml = `
+                        <div class="champ-card" style="border-color: #6366F1; box-shadow: 0 0 40px rgba(99,102,241,0.25);">
+                            <div class="champ-emoji">🎁</div>
+                            <div class="champ-title" style="color: #818CF8;">GİZEMLİ KUTU AÇILDI!</div>
+                            <div class="champ-subtitle" style="font-size: 16px;">${txt}</div>
+                        </div>
+                    `;
+                } else if (dlg.type === 'YanciIhtilali') {
+                    innerHtml = `
+                        <div class="champ-card" style="border-color: #F87171; box-shadow: 0 0 40px rgba(248,113,113,0.25);">
+                            <div class="champ-emoji" style="animation: spinEmoji 3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">🎡</div>
+                            <div class="champ-title" style="color: #F87171;">YANCI İHTİLALİ</div>
+                            <div class="champ-subtitle" style="font-size: 16px;">Kader çarkı döndü! Şanssız Takım: <b>${dlg.teamName}</b>. Otomatik +101 ceza yansıdı!</div>
+                        </div>
+                    `;
+                } else if (dlg.type === 'GreatSwap') {
+                    innerHtml = `
+                        <div class="champ-card" style="background: #991B1B; border-color: #EF4444; box-shadow: 0 0 60px rgba(239,68,68,0.5);">
+                            <div class="champ-emoji" style="font-size: 80px;">💣</div>
+                            <div class="champ-title" style="color: #fff; font-size: 26px;">BÜYÜK TAKAS!</div>
+                            <div class="champ-subtitle" style="color: #fff; font-size: 16px;">Masadaki herkes ıstakasını sağındaki oyuncuya devrediyor! Adalet yeniden dağıtılıyor.</div>
+                        </div>
+                    `;
+                } else if (dlg.type === 'CifteKumar') {
+                    innerHtml = `
+                        <div class="champ-card" style="border-color: #FBBF24; box-shadow: 0 0 40px rgba(251,191,36,0.25);">
+                            <div class="champ-emoji">🎲</div>
+                            <div class="champ-title" style="color: #FBBF24;">ÇİFTE KUMAR</div>
+                            <div class="champ-subtitle" style="font-size: 16px;"><b>${dlg.teamName}</b> risk alıyor mu? (Kazanan x2, Kaybeden 0) Bekleniyor...</div>
+                        </div>
+                    `;
+                } else if (dlg.type === 'CifteKumarResult') {
+                    const txt = dlg.win ? `KAZANDILAR! Skorları x2 oldu: ${dlg.finalScore}` : `KAYBETTİLER! Kazandıkları puan sıfırlandı: 0`;
+                    const color = dlg.win ? '#4ADE80' : '#F87171';
+                    const emoji = dlg.win ? '🎉' : '💀';
+                    innerHtml = `
+                        <div class="champ-card" style="border-color: ${color}; box-shadow: 0 0 40px ${color}44;">
+                            <div class="champ-emoji">${emoji}</div>
+                            <div class="champ-title" style="color: ${color};">${dlg.win ? 'KAZANDILAR!' : 'KAYBETTİLER!'}</div>
+                            <div class="champ-subtitle" style="font-size: 16px;">${txt}</div>
+                        </div>
+                    `;
+                }
+                eventDialogEl.innerHTML = innerHtml;
+            } else {
+                eventDialogEl.style.display = 'none';
+            }
+
+            let eventDesc = "Bu elde özel kurallar geçerlidir!";
+            if (data.activeEvent === 'MYSTERY_BOX') eventDesc = "Rastgele bir takıma sürpriz bir ceza veya ödül vurur!";
+            else if (data.activeEvent === 'YANCI_IHTILALI') eventDesc = "Kader Çarkı şanssız takıma acımasızca +101 ceza verdi.";
+            else if (data.activeEvent === 'CIFTE_KUMAR') eventDesc = "Eli kazanan takım risk alır! Yazı turaya göre skor x2 veya 0 olur.";
+            else if (data.activeEvent === 'GREAT_SWAP') eventDesc = "Herkes ıstakasını sağındaki oyuncuya devretti!";
+            else if (data.activeEvent === 'KAOS_ELI') eventDesc = "Bu elde girilen tüm cezalar ve puanlar 2 katı hesaplanır!";
+
             // Re-render complete Main Container
             appContainer.innerHTML = `
+                ${data.activeEvent && data.activeEvent !== "NONE" ? `
+                <div style="background-color: rgba(248, 113, 113, 0.15); border: 1px solid rgba(248, 113, 113, 0.4); padding: 12px 16px; border-radius: 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 0px; box-shadow: 0 4px 20px rgba(248, 113, 113, 0.2); animation: scaleInCard 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+                    <div style="font-size: 28px; animation: shakeEmoji 1s infinite alternate;">⚠️</div>
+                    <div>
+                        <div style="font-weight: 900; color: var(--text-primary); font-size: 14px; letter-spacing: 1px;">AKTİF ETKİNLİK: <span style="color: var(--accent-red)">${data.activeEvent}</span></div>
+                        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">${eventDesc}</div>
+                    </div>
+                </div>
+                ` : ''}
+
                 <!-- Dynamic Teams Header -->
                 <div class="teams-card">
                     <div class="teams-row">

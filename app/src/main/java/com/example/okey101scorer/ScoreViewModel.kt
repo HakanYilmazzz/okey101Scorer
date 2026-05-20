@@ -22,6 +22,8 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import com.example.okey101scorer.engine.TableEvent
+import com.example.okey101scorer.engine.EventEngine
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -35,7 +37,8 @@ data class Round(
     val score1: Int = 0,
     val score2: Int = 0,
     val isScore1Entered: Boolean = false,
-    val isScore2Entered: Boolean = false
+    val isScore2Entered: Boolean = false,
+    val event: TableEvent = TableEvent.NONE
 )
 
 data class SpectatorReaction(
@@ -51,12 +54,27 @@ data class SpectatorChat(
     val message: String
 )
 
+sealed class ActiveEventDialog {
+    object None : ActiveEventDialog()
+    data class MysteryBox(val teamIndex: Int, val amount: Int, val teamName: String) : ActiveEventDialog()
+    data class YanciIhtilali(val targetTeamIndex: Int, val teamName: String) : ActiveEventDialog()
+    object GreatSwap : ActiveEventDialog()
+    data class CifteKumar(val teamIndex: Int, val teamName: String, val currentPenalty: Int, val roundId: String) : ActiveEventDialog()
+    data class CifteKumarResult(val win: Boolean, val finalScore: Int) : ActiveEventDialog()
+}
+
 class ScoreViewModel(application: Application) : AndroidViewModel(application) {
 
     private val dataStore = application.dataStore
 
     private val _teamNames = MutableStateFlow(listOf("BİZ", "ONLAR"))
     val teamNames: StateFlow<List<String>> = _teamNames.asStateFlow()
+
+    private val _activeEvent = MutableStateFlow(TableEvent.NONE)
+    val activeEvent: StateFlow<TableEvent> = _activeEvent.asStateFlow()
+
+    private val _activeEventDialog = MutableStateFlow<ActiveEventDialog>(ActiveEventDialog.None)
+    val activeEventDialog: StateFlow<ActiveEventDialog> = _activeEventDialog.asStateFlow()
 
     private val _rounds = MutableStateFlow(listOf(Round()))
     val rounds: StateFlow<List<Round>> = _rounds.asStateFlow()
@@ -142,9 +160,13 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             if (serializedRounds.isNotEmpty()) {
-                _rounds.value = deserializeRounds(serializedRounds)
+                val loadedRounds = deserializeRounds(serializedRounds)
+                _rounds.value = loadedRounds
+                _activeEvent.value = loadedRounds.lastOrNull()?.event ?: TableEvent.NONE
             } else {
-                _rounds.value = listOf(Round())
+                val initialEvent = EventEngine.rollForNextRoundEvent(0)
+                _activeEvent.value = initialEvent
+                _rounds.value = listOf(Round(event = initialEvent))
             }
             calculateSums()
         }
@@ -228,6 +250,15 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
                     "isScore2Entered" to round.isScore2Entered
                 )
             },
+            "activeEvent" to _activeEvent.value.name,
+            "activeEventDialog" to when (val dialog = _activeEventDialog.value) {
+                is ActiveEventDialog.None -> null
+                is ActiveEventDialog.MysteryBox -> mapOf("type" to "MysteryBox", "teamName" to dialog.teamName, "amount" to dialog.amount)
+                is ActiveEventDialog.YanciIhtilali -> mapOf("type" to "YanciIhtilali", "teamName" to dialog.teamName)
+                is ActiveEventDialog.GreatSwap -> mapOf("type" to "GreatSwap")
+                is ActiveEventDialog.CifteKumar -> mapOf("type" to "CifteKumar", "teamName" to dialog.teamName, "currentPenalty" to dialog.currentPenalty)
+                is ActiveEventDialog.CifteKumarResult -> mapOf("type" to "CifteKumarResult", "win" to dialog.win, "finalScore" to dialog.finalScore)
+            },
             "winningMessage" to getWinningMessage(),
             "status" to "active"
         )
@@ -253,10 +284,81 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun addRound() {
+        val sums = _columnSums.value
+        val sum1 = sums.getOrNull(0) ?: 0
+        val sum2 = sums.getOrNull(1) ?: 0
+        val diff = kotlin.math.abs(sum1 - sum2)
+        
+        val newEvent = EventEngine.rollForNextRoundEvent(diff)
+        _activeEvent.value = newEvent
+
         val newList = _rounds.value.toMutableList()
-        newList.add(Round())
+        var newRound = Round(event = newEvent)
+
+        // Handle instant events
+        when (newEvent) {
+            TableEvent.MYSTERY_BOX -> {
+                val teamIndex = listOf(0, 1).random()
+                val amount = listOf(-202, +202).random()
+                if (teamIndex == 0) {
+                    newRound = newRound.copy(score1 = amount, isScore1Entered = true)
+                } else {
+                    newRound = newRound.copy(score2 = amount, isScore2Entered = true)
+                }
+                _activeEventDialog.value = ActiveEventDialog.MysteryBox(teamIndex, amount, _teamNames.value[teamIndex])
+            }
+            TableEvent.YANCI_IHTILALI -> {
+                val teamIndex = listOf(0, 1).random()
+                if (teamIndex == 0) {
+                    newRound = newRound.copy(score1 = 101, isScore1Entered = true)
+                } else {
+                    newRound = newRound.copy(score2 = 101, isScore2Entered = true)
+                }
+                _activeEventDialog.value = ActiveEventDialog.YanciIhtilali(teamIndex, _teamNames.value[teamIndex])
+            }
+            TableEvent.GREAT_SWAP -> {
+                _activeEventDialog.value = ActiveEventDialog.GreatSwap
+            }
+            else -> {}
+        }
+
+        newList.add(newRound)
         _rounds.value = newList
         saveData()
+    }
+
+    fun dismissEventDialog() {
+        val currentDialog = _activeEventDialog.value
+        _activeEventDialog.value = ActiveEventDialog.None
+        saveData()
+        
+        if (currentDialog is ActiveEventDialog.CifteKumarResult) {
+            // After seeing the result, we proceed to add a new round
+            addRound()
+        }
+    }
+
+    fun resolveCifteKumar(acceptRisk: Boolean, roundId: String, teamIndex: Int, currentPenalty: Int) {
+        if (!acceptRisk) {
+            dismissEventDialog()
+            addRound()
+            return
+        }
+
+        val win = kotlin.random.Random.nextBoolean()
+        val finalScore = if (win) currentPenalty * 2 else 0
+        
+        val newList = _rounds.value.toMutableList()
+        val index = newList.indexOfFirst { it.id == roundId }
+        if (index != -1) {
+            val r = newList[index]
+            newList[index] = if (teamIndex == 0) r.copy(score1 = finalScore) else r.copy(score2 = finalScore)
+            _rounds.value = newList
+            calculateSums()
+            saveData()
+        }
+        
+        _activeEventDialog.value = ActiveEventDialog.CifteKumarResult(win, finalScore)
     }
 
     fun deleteRound(id: String) {
@@ -293,10 +395,11 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
         val index = newList.indexOfFirst { it.id == roundId }
         if (index != -1) {
             val round = newList[index]
+            val actualValue = if (round.event == TableEvent.KAOS_ELI) newValue * 2 else newValue
             newList[index] = if (colIndex == 0) {
-                round.copy(score1 = newValue, isScore1Entered = true)
+                round.copy(score1 = actualValue, isScore1Entered = true)
             } else {
-                round.copy(score2 = newValue, isScore2Entered = true)
+                round.copy(score2 = actualValue, isScore2Entered = true)
             }
             _rounds.value = newList
             calculateSums()
@@ -304,7 +407,20 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
 
             val updatedRound = newList[index]
             if (index == newList.size - 1 && updatedRound.isScore1Entered && updatedRound.isScore2Entered) {
-                addRound()
+                if (updatedRound.event == TableEvent.CIFTE_KUMAR) {
+                    val isTeam1Winner = updatedRound.score1 < 0
+                    val isTeam2Winner = updatedRound.score2 < 0
+                    
+                    if (isTeam1Winner && !isTeam2Winner) {
+                        _activeEventDialog.value = ActiveEventDialog.CifteKumar(0, _teamNames.value[0], updatedRound.score1, updatedRound.id)
+                    } else if (isTeam2Winner && !isTeam1Winner) {
+                        _activeEventDialog.value = ActiveEventDialog.CifteKumar(1, _teamNames.value[1], updatedRound.score2, updatedRound.id)
+                    } else {
+                        addRound()
+                    }
+                } else {
+                    addRound()
+                }
             }
         }
     }
@@ -316,7 +432,9 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun resetGame() {
-        _rounds.value = listOf(Round())
+        val initialEvent = EventEngine.rollForNextRoundEvent(0)
+        _activeEvent.value = initialEvent
+        _rounds.value = listOf(Round(event = initialEvent))
         lastDeletedRound = null
         lastDeletedIndex = -1
         calculateSums()

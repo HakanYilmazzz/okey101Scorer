@@ -61,11 +61,16 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import kotlin.math.sqrt
+import com.example.okey101scorer.engine.TableEvent
+import com.example.okey101scorer.ActiveEventDialog
+import com.example.okey101scorer.components.ActiveEventDialogHandler
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun MainScreen(viewModel: ScoreViewModel) {
     val rounds by viewModel.rounds.collectAsState()
+    val activeEvent by viewModel.activeEvent.collectAsState()
+    val activeEventDialog by viewModel.activeEventDialog.collectAsState()
     val columnSums by viewModel.columnSums.collectAsState()
     val teamNames by viewModel.teamNames.collectAsState()
     val isSpectatorActive by viewModel.isSpectatorActive.collectAsState()
@@ -474,6 +479,49 @@ fun MainScreen(viewModel: ScoreViewModel) {
                 label = "bgTint2_anim"
             )
 
+            // Event Banner
+            AnimatedVisibility(
+                visible = activeEvent != TableEvent.NONE,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("⚠️", fontSize = 24.sp, modifier = Modifier.padding(end = 12.dp))
+                        Column {
+                            Text(
+                                text = "AKTİF ETKİNLİK: ${activeEvent.name}",
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            
+                            val eventDesc = when (activeEvent) {
+                                TableEvent.MYSTERY_BOX -> "Rastgele bir takıma sürpriz bir ceza veya ödül vurur!"
+                                TableEvent.YANCI_IHTILALI -> "Kader Çarkı şanssız takıma acımasızca +101 ceza verdi."
+                                TableEvent.CIFTE_KUMAR -> "Eli kazanan takım risk alır! Yazı turaya göre skor x2 veya 0 olur."
+                                TableEvent.GREAT_SWAP -> "Herkes ıstakasını sağındaki oyuncuya devretti!"
+                                TableEvent.KAOS_ELI -> "Bu elde girilen tüm cezalar ve puanlar 2 katı hesaplanır!"
+                                else -> "Bu elde özel kurallar geçerlidir!"
+                            }
+                            
+                            Text(
+                                text = eventDesc,
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
+                            )
+                        }
+                    }
+                }
+            }
+
             // Sticky Team Headers (Elevated)
             com.example.okey101scorer.components.TeamHeader(
                 teamNames = teamNames,
@@ -554,6 +602,17 @@ fun MainScreen(viewModel: ScoreViewModel) {
             }
         )
     }
+
+    ActiveEventDialogHandler(
+        dialogState = activeEventDialog,
+        onDismiss = { viewModel.dismissEventDialog() },
+        onResolveCifteKumar = { acceptRisk ->
+            if (activeEventDialog is ActiveEventDialog.CifteKumar) {
+                val state = activeEventDialog as ActiveEventDialog.CifteKumar
+                viewModel.resolveCifteKumar(acceptRisk, state.roundId, state.teamIndex, state.currentPenalty)
+            }
+        }
+    )
 
     NumpadOverlay(
         showNumpad = showNumpad,
