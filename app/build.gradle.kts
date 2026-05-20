@@ -57,6 +57,12 @@ dependencies {
     // ViewModel Compose
     implementation(libs.androidx.lifecycle.viewmodel.compose)
 
+    // Splash Screen
+    implementation("androidx.core:core-splashscreen:1.2.0")
+
+    // Navigation Compose
+    implementation("androidx.navigation:navigation-compose:2.8.5")
+
     // Serialization & DataStore
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.datastore.preferences)

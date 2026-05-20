@@ -114,6 +114,9 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
     private val _isEventsEnabled = MutableStateFlow(true)
     val isEventsEnabled: StateFlow<Boolean> = _isEventsEnabled.asStateFlow()
 
+    private val _isReady = MutableStateFlow(false)
+    val isReady: StateFlow<Boolean> = _isReady.asStateFlow()
+
     fun setEventsEnabled(enabled: Boolean) {
         _isEventsEnabled.value = enabled
         saveData()
@@ -182,6 +185,9 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
                 _rounds.value = listOf(Round(event = initialEvent))
             }
             calculateSums()
+            // Artificial delay to prevent splash screen from flashing too fast (UX best practice)
+            kotlinx.coroutines.delay(600)
+            _isReady.value = true
         }
     }
 
