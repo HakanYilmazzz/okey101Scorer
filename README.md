@@ -18,7 +18,7 @@ Bu uygulama, sadece basit bir skor tablosu olmanın ötesinde, masadaki yancıla
 ### 💾 2. Yerel Kayıt Güvencesi (DataStore & Serialization)
 * **Asenkron ve Güvenilir Kayıt**: Uygulama içi veriler, modern `Preferences DataStore` mimarisi kullanılarak arka planda (asenkron) kaydedilir. Arayüzde hiçbir bloklanma veya takılma yaşanmaz.
 * **Veri Bütünlüğü**: Skorlar ve oyun durumları `Kotlinx Serialization` ile güvenli bir şekilde JSON formatına çevrilerek saklanır. Şarjınız bitse veya uygulama kapansa bile oyununuz saniyesi saniyesine güvendedir.
-
+  
 ### 🎲 3. Masa Etkinlik Motoru (Party Game Mechanics)
 Okey 101 oyununu düz bir skor takibinden çıkarıp tam bir parti oyununa dönüştüren **rastgele olaylar sistemi** (%85 normal el, %15 etkinlikli el):
 * **Kader Çarkı (Yancı İhtilali)**: Masada ansızın beliren ve seyircilerle ortak çalışan dönen bir çark! Şanssız takıma saniyeler içinde +101 ceza yazar.
