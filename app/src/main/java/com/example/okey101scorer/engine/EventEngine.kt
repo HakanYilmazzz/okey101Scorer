@@ -15,11 +15,12 @@ object EventEngine {
      * @return Tetiklenen olay (TableEvent).
      */
     fun rollForNextRoundEvent(scoreDifference: Int): TableEvent {
-        // 1. Aşama: %15 ihtimalle Event tetikleme kontrolü. (Test için devredışı bırakıldı!)
-        // val initialRoll = Random.nextInt(1, 101) // 1..100
-        // if (initialRoll <= 85) {
-        //     return TableEvent.NONE
-        // }
+        // 1. Aşama: %85 ihtimalle Event tetikleme kontrolü.
+        // Oyunun suyunu çıkarmamak için eventler çok nadir olmalı.
+        val initialRoll = Random.nextInt(1, 101) // 1..100
+        if (initialRoll <= 85) {
+            return TableEvent.NONE
+        }
 
         // 2. Aşama: Event havuzu ve ağırlıkların ayarlanması.
         // Sadece gerçekleşebilecek eventleri (NONE hariç) içeren havuz:

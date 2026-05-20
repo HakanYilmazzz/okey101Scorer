@@ -583,10 +583,33 @@ fun MainScreen(viewModel: ScoreViewModel) {
 
     // Reset Game Dialog
     if (showResetDialog) {
+        val isEventsEnabled by viewModel.isEventsEnabled.collectAsState()
+        
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
             title = { Text("Oyunu Sıfırla") },
-            text = { Text("Tüm oyunu sıfırlamak istediğinize emin misiniz?") },
+            text = { 
+                Column {
+                    Text("Tüm oyunu sıfırlamak istediğinize emin misiniz?")
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    // Parti Modu (Etkinlikler) Toggle
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Parti Modu (Etkinlikler)", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text("Açık olduğunda oyun esnasında bomba, çark ve kutu gibi rastgele olaylar yaşanır.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(
+                            checked = isEventsEnabled,
+                            onCheckedChange = { viewModel.setEventsEnabled(it) }
+                        )
+                    }
+                }
+            },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.resetGame()

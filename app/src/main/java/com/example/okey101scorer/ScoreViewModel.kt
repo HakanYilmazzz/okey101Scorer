@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import java.util.UUID
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -108,6 +109,15 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
 
     private val ROUNDS_KEY = stringPreferencesKey("rounds")
     private val TEAM_NAMES_KEY = stringPreferencesKey("teamNames")
+    private val IS_EVENTS_ENABLED_KEY = booleanPreferencesKey("isEventsEnabled")
+
+    private val _isEventsEnabled = MutableStateFlow(true)
+    val isEventsEnabled: StateFlow<Boolean> = _isEventsEnabled.asStateFlow()
+
+    fun setEventsEnabled(enabled: Boolean) {
+        _isEventsEnabled.value = enabled
+        saveData()
+    }
 
     private fun serializeRounds(roundsList: List<Round>): String {
         return Json.encodeToString(roundsList)
@@ -133,6 +143,7 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
             dataStore.edit { prefs ->
                 prefs[ROUNDS_KEY] = serializedRounds
                 prefs[TEAM_NAMES_KEY] = serializedTeamNames
+                prefs[IS_EVENTS_ENABLED_KEY] = _isEventsEnabled.value
             }
             
             // Trigger immediate live broadcast if active
@@ -147,6 +158,8 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
             val prefs = dataStore.data.firstOrNull()
             val serializedRounds = prefs?.get(ROUNDS_KEY) ?: ""
             val serializedTeamNames = prefs?.get(TEAM_NAMES_KEY) ?: ""
+            
+            _isEventsEnabled.value = prefs?.get(IS_EVENTS_ENABLED_KEY) ?: true
 
             if (serializedTeamNames.isNotEmpty()) {
                 try {
@@ -164,7 +177,7 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
                 _rounds.value = loadedRounds
                 _activeEvent.value = loadedRounds.lastOrNull()?.event ?: TableEvent.NONE
             } else {
-                val initialEvent = EventEngine.rollForNextRoundEvent(0)
+                val initialEvent = if (_isEventsEnabled.value) EventEngine.rollForNextRoundEvent(0) else TableEvent.NONE
                 _activeEvent.value = initialEvent
                 _rounds.value = listOf(Round(event = initialEvent))
             }
@@ -289,7 +302,7 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
         val sum2 = sums.getOrNull(1) ?: 0
         val diff = kotlin.math.abs(sum1 - sum2)
         
-        val newEvent = EventEngine.rollForNextRoundEvent(diff)
+        val newEvent = if (_isEventsEnabled.value) EventEngine.rollForNextRoundEvent(diff) else TableEvent.NONE
         _activeEvent.value = newEvent
 
         val newList = _rounds.value.toMutableList()
@@ -432,7 +445,7 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun resetGame() {
-        val initialEvent = EventEngine.rollForNextRoundEvent(0)
+        val initialEvent = if (_isEventsEnabled.value) EventEngine.rollForNextRoundEvent(0) else TableEvent.NONE
         _activeEvent.value = initialEvent
         _rounds.value = listOf(Round(event = initialEvent))
         lastDeletedRound = null
