@@ -222,7 +222,7 @@
             display: flex;
             flex-direction: column;
             gap: 16px;
-            padding-bottom: 140px; /* Spacer to prevent fixed banter-panel from overlapping the totals card */
+            padding-bottom: 160px; /* Spacer to prevent fixed banter-panel from overlapping content */
         }
 
         /* Team Headers Card */
@@ -365,37 +365,7 @@
             border: 1px solid rgba(239, 68, 68, 0.3);
         }
 
-        /* Bottom Sum Row Card */
-        .sum-card {
-            background-color: var(--card-bg);
-            border-radius: 24px;
-            border: 2px solid var(--border-color);
-            padding: 16px;
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
-            margin-bottom: 16px;
-        }
 
-        .sum-title {
-            text-align: center;
-            font-size: 11px;
-            font-weight: 900;
-            color: var(--text-secondary);
-            letter-spacing: 3px;
-            margin-bottom: 10px;
-        }
-
-        .sum-row {
-            display: flex;
-            align-items: center;
-            text-align: center;
-        }
-
-        .sum-value {
-            flex: 1;
-            font-size: 32px;
-            font-weight: 900;
-            font-family: 'JetBrains Mono', monospace;
-        }
 
         /* Empty/Warning States */
         .empty-state {
@@ -502,21 +472,24 @@
         /* Banter Panel (Reactions + Chat) styling */
         .banter-panel {
             position: fixed;
-            bottom: 16px;
+            bottom: 0;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(30, 41, 59, 0.8);
+            background: rgba(15, 23, 42, 0.85);
             backdrop-filter: blur(20px);
-            border: 1px solid var(--border-color);
-            border-radius: 24px;
-            padding: 12px;
+            border-top: 1px solid var(--border-color);
+            border-left: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            border-bottom: none;
+            border-radius: 24px 24px 0 0;
+            padding: 14px 16px;
             display: flex;
             flex-direction: column;
             gap: 10px;
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4);
             z-index: 100;
-            width: calc(100% - 32px);
-            max-width: 380px;
+            width: 100%;
+            max-width: 500px;
         }
 
         .chat-input-row {
@@ -740,9 +713,7 @@
             body {
                 padding: 10px 10px 80px 10px;
             }
-            .sum-value {
-                font-size: 28px;
-            }
+
             .team-name {
                 font-size: 18px;
             }
@@ -1384,19 +1355,9 @@
 
                 <!-- Scrollable Rounds -->
                 <div class="rounds-card">
-                    <div class="rounds-header">EL SKORLARI</div>
+                    <div class="rounds-header">EL SKORLARI • ${data.rounds.length}. EL</div>
                     <div class="rounds-list" id="roundsList">
                         ${roundsHtml}
-                    </div>
-                </div>
-
-                <!-- Sum & Win Card -->
-                <div class="sum-card" style="${dynamicStyle}">
-                    <div class="sum-title">TOPLAM (${data.rounds.length} El)</div>
-                    <div class="sum-row">
-                        <div class="sum-value" style="color: ${sum1 < 0 ? 'var(--accent-red)' : 'var(--accent-green)'}">${sum1}</div>
-                        <div class="divider" style="height: 40px"></div>
-                        <div class="sum-value" style="color: ${sum2 < 0 ? 'var(--accent-red)' : 'var(--accent-green)'}">${sum2}</div>
                     </div>
                 </div>
             `;
@@ -1407,12 +1368,12 @@
                 roundsList.scrollTop = roundsList.scrollHeight;
             }
 
-            // Animate sum text on score updates
+            // Animate score badges on score updates
             if (lastData && (lastData.sums[0] !== sum1 || lastData.sums[1] !== sum2)) {
-                const values = document.querySelectorAll('.sum-value');
-                values.forEach(el => el.classList.add('score-change'));
+                const badges = document.querySelectorAll('.team-score-badge');
+                badges.forEach(el => el.classList.add('score-change'));
                 setTimeout(() => {
-                    values.forEach(el => el.classList.remove('score-change'));
+                    badges.forEach(el => el.classList.remove('score-change'));
                 }, 500);
             }
 
