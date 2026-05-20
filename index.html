@@ -821,6 +821,45 @@
             from { transform: rotate(-8deg); }
             to { transform: rotate(8deg); }
         }
+
+        /* Floating Emojis Container */
+        #floating-emojis-container {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 500px;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 99;
+            overflow: hidden;
+        }
+
+        .floating-emoji {
+            position: absolute;
+            bottom: 80px; /* Start right above the banter panel */
+            right: 24px;
+            font-size: 28px;
+            pointer-events: none;
+            will-change: transform, opacity;
+            user-select: none;
+        }
+
+        @keyframes floatUp {
+            0% {
+                transform: translateY(0) scale(0.6) rotate(0deg);
+                opacity: 0;
+            }
+            15% {
+                opacity: 1;
+                transform: translateY(-20px) scale(1.15) rotate(-8deg);
+            }
+            100% {
+                transform: translateY(-250px) scale(0.85) rotate(15deg);
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -913,6 +952,9 @@
             <div id="profileError" style="color: var(--accent-red); font-size: 13px; font-weight: bold; display: none;">Lütfen 1-10 hane arası bir isim girin.</div>
         </div>
     </div>
+
+    <!-- Floating Emojis Overlay Container -->
+    <div id="floating-emojis-container"></div>
 
     <!-- Event Dialog Overlay for Web -->
     <div id="webEventDialog" class="champ-overlay" style="display: none;">
@@ -1115,11 +1157,15 @@
             const stateRef = db.ref(`rooms/${room}/state`);
             const messagesRef = db.ref(`rooms/${room}/messages`);
 
-            // Listen for NEW messages
+            // Listen for NEW messages (both chat and reactions)
             messagesRef.limitToLast(1).on('child_added', (snapshot) => {
                 const msg = snapshot.val();
-                if (msg && msg.type === 'chat') {
-                    displayChatBubble(msg);
+                if (msg) {
+                    if (msg.type === 'chat') {
+                        displayChatBubble(msg);
+                    } else if (msg.type === 'reaction') {
+                        triggerFloatingEmoji(msg.emoji);
+                    }
                 }
             });
 
@@ -1408,6 +1454,40 @@
                     if (bubble.parentNode) bubble.parentNode.removeChild(bubble);
                 }, 500);
             }, 6000); // 6 seconds visible
+        }
+
+        function triggerFloatingEmoji(emoji) {
+            const container = document.getElementById('floating-emojis-container');
+            if (!container) return;
+
+            const span = document.createElement('span');
+            span.className = 'floating-emoji';
+            span.innerText = emoji;
+
+            // Random horizontal shift between -15px and +15px
+            const randomX = Math.random() * 30 - 15;
+            // Random font size between 24px and 36px
+            const randomSize = Math.random() * 12 + 24;
+            // Random duration between 1.5s and 2s
+            const randomDuration = 1500 + Math.random() * 500;
+
+            span.style.fontSize = `${randomSize}px`;
+            span.style.right = `${24 + randomX}px`;
+            span.style.animation = `floatUp ${randomDuration}ms cubic-bezier(0.25, 1, 0.5, 1) forwards`;
+
+            container.appendChild(span);
+
+            // Clean up DOM after animation finishes to prevent memory leaks
+            span.addEventListener('animationend', () => {
+                span.remove();
+            });
+            
+            // Safety fallback timeout
+            setTimeout(() => {
+                if (span.parentNode) {
+                    span.remove();
+                }
+            }, randomDuration + 100);
         }
 
         function renderBroadcastTerminated() {
