@@ -247,6 +247,43 @@
             letter-spacing: 1px;
             color: var(--text-primary);
             text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .team-score-badge {
+            font-size: 11px;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 6px;
+            line-height: 1.2;
+            display: inline-flex;
+            align-items: center;
+            letter-spacing: 0px;
+            text-transform: none;
+            transition: all 0.3s ease;
+        }
+        
+        .team-score-badge.winning {
+            background-color: rgba(74, 222, 128, 0.12);
+            border: 1px solid rgba(74, 222, 128, 0.35);
+            color: #4ADE80;
+            box-shadow: 0 0 8px rgba(74, 222, 128, 0.15);
+        }
+        
+        .team-score-badge.losing {
+            background-color: rgba(248, 113, 113, 0.12);
+            border: 1px solid rgba(248, 113, 113, 0.35);
+            color: #F87171;
+            box-shadow: 0 0 8px rgba(248, 113, 113, 0.15);
+        }
+
+        .team-score-badge.neutral {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--text-secondary);
         }
 
         .divider {
@@ -1307,8 +1344,19 @@
             else if (data.activeEvent === 'GREAT_SWAP') eventDesc = "Herkes ıstakasını sağındaki oyuncuya devretti!";
             else if (data.activeEvent === 'KAOS_ELI') eventDesc = "Bu elde girilen tüm cezalar ve puanlar 2 katı hesaplanır!";
 
-            // Re-render complete Main Container
-            appContainer.innerHTML = `
+                // Decide classes for badge (lower score wins)
+                let badgeClass1 = "neutral";
+                let badgeClass2 = "neutral";
+                if (sum1 < sum2) {
+                    badgeClass1 = "winning";
+                    badgeClass2 = "losing";
+                } else if (sum2 < sum1) {
+                    badgeClass1 = "losing";
+                    badgeClass2 = "winning";
+                }
+
+                // Re-render complete Main Container
+                appContainer.innerHTML = `
                 ${data.activeEvent && data.activeEvent !== "NONE" ? `
                 <div style="background-color: rgba(248, 113, 113, 0.15); border: 1px solid rgba(248, 113, 113, 0.4); padding: 12px 16px; border-radius: 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 0px; box-shadow: 0 4px 20px rgba(248, 113, 113, 0.2); animation: scaleInCard 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
                     <div style="font-size: 28px; animation: shakeEmoji 1s infinite alternate;">⚠️</div>
@@ -1322,9 +1370,15 @@
                 <!-- Dynamic Teams Header -->
                 <div class="teams-card">
                     <div class="teams-row">
-                        <div class="team-name">${team1}</div>
+                        <div class="team-name">
+                            <span>${team1}</span>
+                            <span class="team-score-badge ${badgeClass1}">${sum1}</span>
+                        </div>
                         <div class="divider"></div>
-                        <div class="team-name">${team2}</div>
+                        <div class="team-name">
+                            <span>${team2}</span>
+                            <span class="team-score-badge ${badgeClass2}">${sum2}</span>
+                        </div>
                     </div>
                 </div>
 
