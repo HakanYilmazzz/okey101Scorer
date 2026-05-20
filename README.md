@@ -18,7 +18,16 @@ Bu uygulama, sadece basit bir skor tablosu olmanın ötesinde, masadaki yancıla
 * **Asenkron ve Güvenilir Kayıt**: Uygulama içi veriler, modern `Preferences DataStore` mimarisi kullanılarak arka planda (asenkron) kaydedilir. Arayüzde hiçbir bloklanma veya takılma yaşanmaz.
 * **Veri Bütünlüğü**: Skorlar ve oyun durumları `Kotlinx Serialization` ile güvenli bir şekilde JSON formatına çevrilerek saklanır. Şarjınız bitse veya uygulama kapansa bile oyununuz saniyesi saniyesine güvendedir.
 
-### 📡 3. Seyirci Modu & "Akan Sohbet" (Interactive Spectator & Live Banter Chat)
+### 🎲 3. Masa Etkinlik Motoru (Party Game Mechanics)
+Okey 101 oyununu düz bir skor takibinden çıkarıp tam bir parti oyununa dönüştüren **rastgele olaylar sistemi**:
+* **Kader Çarkı (Yancı İhtilali)**: Masada ansızın beliren ve seyircilerle ortak çalışan dönen bir çark! Şanssız takıma saniyeler içinde +101 ceza yazar.
+* **Gizemli Kutu (Mystery Box)**: Rastgele bir takıma beklenmedik sürpriz bir ödül (-202) veya devasa bir ceza (+202) çıkarır.
+* **Büyük Takas (Great Swap)**: Ekranda bomba patlayarak herkesin ıstakasını devretmesini söyleyen, oyunun kaderini değiştiren kaos kuralı.
+* **Çifte Kumar (Yazı-Tura)**: Eli kazanan takıma el bitiminde sunulan büyük risk! Havada dönen sanal madeni para (🪙) ile kazandığın eksi puanı ikiye katlama (x2) ya da tamamen sıfırlama (0) heyecanı.
+* **Kaos Eli**: Bu eldeki tüm cezaların ve ödüllerin otomatik 2 katı hesaplanmasını sağlayan gaddarlık sistemi.
+* **Görsel Şölen**: Her kural tetiklendiğinde telefon ekranında ve **eşzamanlı olarak yancıların web ekranında** çıkan animasyonlu, gecikmeli ve gerilimli tam ekran diyaloglar!
+
+### 📡 4. Seyirci Modu & "Akan Sohbet" (Interactive Spectator & Live Banter Chat)
 * **Kendi Ekranından İzleme**: Masadaki seyirciler (yancılar), oyunu izlemek için telefonunuza eğilmek zorunda kalmaz.
 * **Yerel (Local) QR Kod ile Hızlı Bağlantı**: Dış bir API'ye bağımlı olmadan uygulamanın kendi içinde (`ZXing Core` ile) oluşturduğu karekod ile seyirciler (yancılar) saniyeler içinde odaya katılabilir. İnternet yavaşlasa dahi QR kodunuz anında hazırdır.
 * **Manuel Giriş**: İstenirse **6 haneli oda kodunu** doğrudan web sitesine girerek de bağlanabilirsiniz.
@@ -40,17 +49,17 @@ Bu uygulama, sadece basit bir skor tablosu olmanın ötesinde, masadaki yancıla
   * *Host Koruma Limiti*: Host telefonunda kasma/donma yaşanmaması için ekranda aynı anda en fazla 15 uçan parçacık gösterilir, fazlası kuyruğa alınmadan filtrelenir!
 * **Dinamik Aura & Otomatik Kapanış**: Seyirci ekranı da tıpkı uygulama gibi skora göre dinamik "Aura" efektleriyle parlar. Oyun sahibi yayını durdurduğunda ise yancıların ekranlarında uyarı çıkar ve 3 saniye sonra otomatik olarak odadan atılıp ana menüye (oda giriş ekranına) yönlendirilirler.
 
-### 📳 4. Sallama (Shake) İle Fark Hesaplama Animasyonu
+### 📳 5. Sallama (Shake) İle Fark Hesaplama Animasyonu
 * **Dramatik Deneyim**: Telefonu salladığınızda masada heyecan yaratacak **2 aşamalı bir animasyon** devreye girer.
 * Önce ekranda *"Fark Hesaplanıyor..."* ibaresiyle şık bir yükleme halkası döner, ardından 1 saniye sonra kazanan takımın durumuna göre (yeşil, kırmızı veya gri neon çerçeveli) büyük bir **Sonuç Kartı** yay efektiyle ekrana fırlayarak puan farkını gösterir.
 
-### ⚡ 5. Üst Düzey Performans (Compose Optimizasyonları)
+### ⚡ 6. Üst Düzey Performans (Compose Optimizasyonları)
 * **Bileşen Mimarisi (Componentization)**: Binlerce satırlık ana ekran, küçük ve tekrar kullanılabilir bileşenlere (`TeamHeader`, `RoundList`, `SumBar`) bölünerek yalnızca değişen alanların yeniden çizilmesi (recomposition) sağlandı.
 * **Durum İzolasyonu (State Isolation) & derivedStateOf**: Numpad gibi klavye girişleri izole edilmiş, aura renkleri ve fark hesaplamaları gibi pahalı işlemler `derivedStateOf` ile sınırlandırılmıştır. Gereksiz hiçbir hesaplama veya çizim yapılmaz.
 * **Görünüm Önbellekleme (View Caching)**: Numpad menüsü silinip tekrar oluşturulmak yerine `graphicsLayer` ile GPU üzerinde kaydırılarak (TranslationY) donanımsal ivmelendirmeyle çalışır.
 * **Asenkron I/O**: Diske yazma işlemleri (`DataStore`) arka planda çalışarak ana iş parçacığını (Main Thread) meşgul etmez. Uygulama her daim sabit 60 FPS / 120 FPS akıcılığında tepki verir.
 
-### 📲 6. Akıllı Ekran Görüntüsü ve Özet Paylaşımı
+### 📲 7. Akıllı Ekran Görüntüsü ve Özet Paylaşımı
 * Tek tuşla skor tablosunun yüksek çözünürlüklü bir ekran görüntüsünü alır.
 * Paylaşım esnasında WhatsApp'ta otomatik olarak şu şekilde **Markdown formatlı, emojili şık bir özet metin** oluşturur:
   > 🎴 **OKEY 101 SKOR TABLOSU** 🎴
