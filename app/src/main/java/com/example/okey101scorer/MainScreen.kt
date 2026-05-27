@@ -640,10 +640,25 @@ fun MainScreen(viewModel: ScoreViewModel) {
     NumpadOverlay(
         showNumpad = showNumpad,
         initialValue = editValue,
+        teamName = if (editColIndex != -1) teamNames.getOrNull(editColIndex) else null,
         onDismiss = { showNumpad = false },
         onDone = { newValue ->
+            val currentRound = rounds.find { it.id == editRoundId }
             viewModel.updateCell(editRoundId, editColIndex, newValue)
-            showNumpad = false
+
+            if (currentRound != null) {
+                val otherColIndex = if (editColIndex == 0) 1 else 0
+                val isOtherEntered = if (otherColIndex == 0) currentRound.isScore1Entered else currentRound.isScore2Entered
+                
+                if (!isOtherEntered) {
+                    editColIndex = otherColIndex
+                    editValue = ""
+                } else {
+                    showNumpad = false
+                }
+            } else {
+                showNumpad = false
+            }
         }
     )
 
@@ -1059,11 +1074,12 @@ fun FloatingEmoji(
 fun NumpadOverlay(
     showNumpad: Boolean,
     initialValue: String,
+    teamName: String? = null,
     onDismiss: () -> Unit,
     onDone: (Int) -> Unit
 ) {
     // Isolate the typing state so it DOES NOT recompose the massive MainScreen!
-    var localValue by remember(showNumpad, initialValue) { mutableStateOf(initialValue) }
+    var localValue by remember(showNumpad, initialValue, teamName) { mutableStateOf(initialValue) }
     
     val numpadOffset by animateFloatAsState(
         targetValue = if (showNumpad) 0f else 1f,
@@ -1112,6 +1128,7 @@ fun NumpadOverlay(
                     )
                     CustomNumpad(
                         currentValue = localValue,
+                        teamName = teamName,
                         onValueChange = { localValue = it },
                         onDone = {
                             val newValue = localValue.toIntOrNull() ?: 0

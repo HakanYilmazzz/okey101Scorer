@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun CustomNumpad(
     currentValue: String,
+    teamName: String? = null,
     onValueChange: (String) -> Unit,
     onDone: () -> Unit
 ) {
@@ -29,6 +30,16 @@ fun CustomNumpad(
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        if (teamName != null) {
+            Text(
+                text = "$teamName Puanı",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
+
         // Display Current Value
         Text(
             text = if (currentValue.isEmpty()) "0" else currentValue,
