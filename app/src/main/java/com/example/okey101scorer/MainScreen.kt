@@ -136,6 +136,7 @@ fun MainScreen(viewModel: ScoreViewModel) {
 
     // Reset Game State
     var showResetDialog by remember { mutableStateOf(false) }
+    var showEndGameConfirmDialog by remember { mutableStateOf(false) }
 
     // Shake State
     var showShakeGap by remember { mutableStateOf(false) }
@@ -608,6 +609,21 @@ fun MainScreen(viewModel: ScoreViewModel) {
                             onCheckedChange = { viewModel.setEventsEnabled(it) }
                         )
                     }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = { 
+                            showResetDialog = false
+                            showEndGameConfirmDialog = true
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("MAÇI BİTİR VE ODAYI KAPAT", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onError)
+                    }
                 }
             },
             confirmButton = {
@@ -620,6 +636,30 @@ fun MainScreen(viewModel: ScoreViewModel) {
             },
             dismissButton = {
                 TextButton(onClick = { showResetDialog = false }) {
+                    Text("İptal")
+                }
+            }
+        )
+    }
+
+    if (showEndGameConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showEndGameConfirmDialog = false },
+            title = { Text("Maçı Bitir ve Kapat", color = MaterialTheme.colorScheme.error) },
+            text = { Text("Oyun tamamen bitirilecek, veritabanı temizlenecek ve web izleyicilerinin bağlantısı kesilecek. Emin misiniz?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.endGameAndCloseRoom()
+                        showEndGameConfirmDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Evet, Bitir")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEndGameConfirmDialog = false }) {
                     Text("İptal")
                 }
             }

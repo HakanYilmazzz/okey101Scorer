@@ -202,6 +202,9 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
         val roomRef = database.getReference("rooms").child(newRoomId)
         val messagesRef = roomRef.child("messages")
 
+        // Oda ilk oluşturulduğunda state objesine createdAt (timestamp) ekliyoruz
+        roomRef.child("state").child("createdAt").setValue(com.google.firebase.database.ServerValue.TIMESTAMP)
+
         broadcastJob?.cancel()
         broadcastJob = viewModelScope.launch(Dispatchers.IO) {
             publishState()
@@ -255,6 +258,27 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun endGameAndCloseRoom() {
+        val currentRoomId = _roomId.value
+
+        // Stop broadcast loops and listeners
+        broadcastJob?.cancel()
+        broadcastJob = null
+        reactionListenerJob?.cancel()
+        reactionListenerJob = null
+        _roomId.value = null
+        _isSpectatorActive.value = false
+
+        // Delete the room from Firebase completely
+        if (currentRoomId != null) {
+            val database = FirebaseDatabase.getInstance()
+            database.getReference("rooms").child(currentRoomId).removeValue()
+        }
+
+        // Reset local game state
+        resetGame()
+    }
+
     private suspend fun publishState() {
         val currentRoomId = _roomId.value ?: return
         
@@ -286,7 +310,7 @@ class ScoreViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 val database = FirebaseDatabase.getInstance()
                 val stateRef = database.getReference("rooms").child(currentRoomId).child("state")
-                stateRef.setValue(stateMap)
+                stateRef.updateChildren(stateMap)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
